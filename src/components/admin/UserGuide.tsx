@@ -35,16 +35,16 @@ const UserGuide: React.FC = () => {
   return (
     <Box>
       <Typography variant="h4" sx={{ mb: 1, color: 'primary.main', fontWeight: 600 }}>
-        {langPackLabel("txtAppManual") || "Cloud4Feed Absenta — Application Manual"}
+        {langPackLabel("txtAppManual") || "Absenta — Application Manual"}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Complete guide for all roles and features in the Cloud4Feed Absenta leave management system.
+        Complete guide for all roles and features in the Absenta leave management system.
       </Typography>
 
       {/* ── Overview ── */}
       <Section title="1. Overview" defaultExpanded>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Cloud4Feed Absenta is a leave management application that supports multiple organizational hierarchies
+          Absenta is a leave management application that supports multiple organizational hierarchies
           and roles. It handles leave requests, approvals, balance tracking, collective leave, and
           team calendars.
         </Typography>

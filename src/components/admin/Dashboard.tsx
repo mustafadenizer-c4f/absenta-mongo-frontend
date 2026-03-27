@@ -421,7 +421,7 @@ const AdminDashboard: React.FC = () => {
         }}
       >
         <Typography variant="body2">
-          Cloud4Feed Absenta v1.0
+          Absenta v1.0
         </Typography>
         <Typography variant="body2" sx={{ mt: 1 }}>
           {stats.totalUsers} users • {stats.admins} admins • {stats.generalManagers}{" "}

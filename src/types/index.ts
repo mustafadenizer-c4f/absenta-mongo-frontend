@@ -57,6 +57,7 @@ export interface User {
   birth_date?: string;
   role: UserRole;
   company_id?: string;
+  company_name?: string;
   group_id?: string;
   department_id?: string;
   team_id?: string;

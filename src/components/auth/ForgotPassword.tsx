@@ -72,7 +72,7 @@ const ForgotPassword: React.FC = () => {
               <Box
                 component="img"
                 src={`${process.env.PUBLIC_URL}/logos/logo.png`}
-                alt="Cloud4Feed Absenta"
+                alt="Absenta"
                 sx={{ height: 64, mx: 'auto', mb: 2 }}
               />
               <Typography

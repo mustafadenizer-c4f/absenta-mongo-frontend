@@ -134,7 +134,7 @@ const Login: React.FC = () => {
               <Box
                 component="img"
                 src={`${process.env.PUBLIC_URL}/logos/logo.png`}
-                alt="Cloud4Feed Absenta"
+                alt="Absenta"
                 sx={{ height: 64, mx: 'auto', mb: 2 }}
               />
               <Typography
@@ -145,7 +145,7 @@ const Login: React.FC = () => {
                 {langPackLabel("txtWelcomeBack") || "Welcome back"}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                {langPackLabel("txtSignInSubtitle") || "Sign in to your Cloud4Feed Absenta account"}
+                {langPackLabel("txtSignInSubtitle") || "Sign in to your Absenta account"}
               </Typography>
             </Box>
 

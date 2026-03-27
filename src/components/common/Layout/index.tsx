@@ -219,11 +219,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <Box
           component="img"
           src={`${process.env.PUBLIC_URL}/logos/logo.png`}
-          alt="Cloud4Feed Absenta"
+          alt="Absenta"
           sx={{ height: 28, borderRadius: '6px' }}
         />
         <Typography variant="subtitle1" sx={{ flexGrow: 1, fontWeight: 600, color: 'text.primary' }}>
-          Cloud4Feed Absenta
+          Absenta {user?.company_name && <span style={{ fontSize: '0.75em', fontWeight: 400, opacity: 0.7 }}>{user.company_name} </span>}
         </Typography>
         <IconButton onClick={handleDrawerToggle} size="small">
           {theme.direction === "rtl" ? <ChevronRight /> : <ChevronLeft />}
@@ -297,12 +297,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <Box
             component="img"
             src={`${process.env.PUBLIC_URL}/logos/logo_white.png`}
-            alt="Cloud4Feed Absenta"
+            alt="Absenta"
             sx={{
               height: 38, mr: 1.5,}}
           />
           <Typography variant="h4" sx={{ flexGrow: 1, fontWeight: 600, letterSpacing: '-0.01em', }}>
-            Cloud4Feed Absenta
+            Absenta {user?.company_name && <span style={{ fontSize: '0.65em', fontWeight: 400, opacity: 0.7 }}>{user.company_name} </span>}
           </Typography>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
