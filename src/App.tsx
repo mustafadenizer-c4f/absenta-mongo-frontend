@@ -41,7 +41,7 @@ import { GroupManagerDashboard, GroupManagerApprovals, GroupManagerTeamView, Gro
 import { GeneralManagerDashboard, GeneralManagerTeamView, CompanyBalances, DepartmentManagerApprovals } from './components/general-manager';
 
 // Supervisor components
-import { SupervisorDashboard, SupervisorLabelManagement } from './components/supervisor';
+import { SupervisorDashboard, SupervisorLabelManagement, SupervisorSystemGuide } from './components/supervisor';
 
 // Profile component
 import ProfilePage from './components/profile/ProfilePage';
@@ -215,6 +215,13 @@ const AppContent: React.FC = () => {
           <ProtectedRoute requireSupervisor>
             <Layout>
               <SupervisorLabelManagement />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/supervisor/guide" element={
+          <ProtectedRoute requireSupervisor>
+            <Layout>
+              <SupervisorSystemGuide />
             </Layout>
           </ProtectedRoute>
         } />

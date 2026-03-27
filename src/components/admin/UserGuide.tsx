@@ -41,6 +41,74 @@ const UserGuide: React.FC = () => {
         Complete guide for all roles and features in the Absenta leave management system.
       </Typography>
 
+      {/* ── Quick Start ── */}
+      <Section title="🚀 Quick Start Guide" defaultExpanded>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Follow these steps in order when setting up your company for the first time.
+          The order matters — each step depends on the previous one.
+        </Typography>
+
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {langPackLabel("txtQuickStartOrderWarning") || "Complete these steps in order. For example, you cannot assign a user to a team that doesn't exist yet, or set a manager who hasn't been created."}
+        </Alert>
+
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Step 1: Choose Your Hierarchy</Typography>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Go to <strong>Settings → Organization</strong> and select your hierarchy profile (Flat, Teams, Departments, or Groups).
+          This determines which organizational levels are available. You can upgrade later but not downgrade.
+        </Typography>
+
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Step 2: Create Organizational Structure</Typography>
+        <Typography variant="body2" sx={{ mb: 1 }}>
+          Build your structure top-down based on your chosen hierarchy:
+        </Typography>
+        <List dense>
+          <ListItem><ListItemText primary="Groups profile → Create Groups first, then Departments inside them, then Teams inside departments" /></ListItem>
+          <ListItem><ListItemText primary="Departments profile → Create Departments first, then Teams inside them" /></ListItem>
+          <ListItem><ListItemText primary="Teams profile → Create Teams directly" /></ListItem>
+          <ListItem><ListItemText primary="Flat profile → Skip this step, no structure needed" /></ListItem>
+        </List>
+
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Step 3: Review Leave Types</Typography>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Default leave types are created automatically. Go to <strong>Leave Types</strong> to review, edit, or add new ones before creating users.
+        </Typography>
+
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Step 4: Add Holidays</Typography>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Go to <strong>Holidays</strong> and add your company's public holidays. Do this before employees start requesting leave so day calculations are accurate from the start.
+        </Typography>
+
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Step 5: Create Managers First</Typography>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Go to <strong>Users</strong> and create your managers (team managers, group managers, department managers) <strong>before</strong> creating staff.
+          This way, when you create staff members, you can immediately assign them to the correct manager.
+        </Typography>
+        <Alert severity="info" sx={{ mb: 2 }}>
+          {langPackLabel("txtQuickStartManagerTip") || "Tip: Create users in this order — department/group managers → team managers → staff. Each level needs a manager from the level above."}
+        </Alert>
+
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Step 6: Create Staff Members</Typography>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Now create your staff. For each user, set their team, manager, hire date, and birth date.
+          The default password is <strong>Pp123456</strong> — users must change it on first login.
+        </Typography>
+
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Step 7: Configure Workdays (Optional)</Typography>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Go to <strong>Settings → Workdays</strong> to configure which days are working days, legal workdays (deducted from leave but not worked), and rest days. Default is Mon–Fri working, Saturday legal.
+        </Typography>
+
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Step 8: Set Up Email (Optional)</Typography>
+        <Typography variant="body2" sx={{ mb: 2 }}>
+          Go to <strong>Settings → Email</strong> to configure SMTP for email notifications (leave submissions, approvals, rejections). You can skip this and set it up later.
+        </Typography>
+
+        <Alert severity="success" sx={{ mt: 1 }}>
+          {langPackLabel("txtQuickStartDone") || "That's it! Your company is ready. Employees can now log in, request leave, and managers can approve them."}
+        </Alert>
+      </Section>
+
       {/* ── Overview ── */}
       <Section title="1. Overview" defaultExpanded>
         <Typography variant="body2" sx={{ mb: 2 }}>

@@ -467,6 +467,8 @@ const Settings: React.FC = () => {
               size="small"
               fullWidth
               placeholder="user@example.com"
+              autoComplete="off"
+              inputProps={{ autoComplete: 'new-password' }}
             />
             <TextField
               label={langPackLabel("txtSmtpPass") || "SMTP Password"}
@@ -476,6 +478,8 @@ const Settings: React.FC = () => {
               fullWidth
               type="password"
               placeholder="••••••••"
+              autoComplete="new-password"
+              inputProps={{ autoComplete: 'new-password' }}
             />
             <TextField
               label={langPackLabel("txtSenderEmail") || "Sender Email"}
