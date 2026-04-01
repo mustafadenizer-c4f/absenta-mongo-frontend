@@ -31,6 +31,7 @@ import {
   Language,
 } from '@mui/icons-material';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { formatLocalDate } from '../../utils/localize';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -166,7 +167,7 @@ const ProfilePage: React.FC = () => {
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto' }}>
-      <Typography variant="h4" sx={{ mb: 3, fontWeight: 600 }}>
+      <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
         {langPackLabel("txtMyProfile") || "My Profile"}
       </Typography>
 
@@ -205,7 +206,7 @@ const ProfilePage: React.FC = () => {
               <TextField
                 fullWidth
                 label={langPackLabel("txtHireDate") || "Hire Date"}
-                value={user.hire_date ? new Date(user.hire_date).toLocaleDateString() : 'N/A'}
+                value={user.hire_date ? formatLocalDate(user.hire_date, language) : 'N/A'}
                 disabled
                 InputProps={{
                   startAdornment: (

@@ -104,7 +104,7 @@ const Departments: React.FC = () => {
     e.preventDefault();
     try {
       if (editingDepartment) {
-        await dispatch(updateDepartment({ id: editingDepartment.id, name })).unwrap();
+        await dispatch(updateDepartment({ id: editingDepartment.id, name, groupId: groupId || undefined })).unwrap();
       } else {
         await dispatch(createDepartment({ name, groupId: groupId || undefined, companyId: currentUser?.company_id })).unwrap();
       }
@@ -166,13 +166,13 @@ const Departments: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600 }}>
           {langPackLabel("txtDepartmentsManagement") || "Departments Management"}
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button variant="outlined" startIcon={<Refresh />} onClick={handleRefresh}>{langPackLabel("txtRefresh") || "Refresh"}</Button>
-          <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenDialog()}>{langPackLabel("txtAddDepartment") || "Add Department"}</Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button variant="outlined" size="small" startIcon={<Refresh />} onClick={handleRefresh}>{langPackLabel("txtRefresh") || "Refresh"}</Button>
+          <Button variant="contained" size="small" startIcon={<Add />} onClick={() => handleOpenDialog()}>{langPackLabel("txtAddDepartment") || "Add Department"}</Button>
         </Box>
       </Box>
 
@@ -277,7 +277,7 @@ const Departments: React.FC = () => {
               onChange={(e) => setName(e.target.value)}
             />
             {showGroupColumn && (
-              <FormControl fullWidth margin="dense" required disabled={!!editingDepartment}>
+              <FormControl fullWidth margin="dense" required>
                 <InputLabel>{langPackLabel("txtGroup") || "Group"}</InputLabel>
                 <Select
                   value={groupId}

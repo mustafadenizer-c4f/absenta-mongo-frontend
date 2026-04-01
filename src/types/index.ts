@@ -24,6 +24,7 @@ export interface CompanyWithAdmin extends Company {
     id: string;
     email: string;
     full_name: string;
+    last_login?: string;
   };
 }
 
@@ -55,6 +56,11 @@ export interface User {
   phone?: string;
   hire_date: string;
   birth_date?: string;
+  sex?: 'male' | 'female' | 'other';
+  address?: string;
+  city?: string;
+  country?: string;
+  job_title?: string;
   role: UserRole;
   company_id?: string;
   company_name?: string;
@@ -64,6 +70,7 @@ export interface User {
   manager_id?: string;
   requires_password_change: boolean;
   language?: string;
+  last_login?: string;
   created_at: string;
   updated_at: string;
 }
@@ -71,7 +78,9 @@ export interface User {
 export interface LeaveType {
   id: string;
   name: string;
+  name_tr?: string;
   description?: string;
+  description_tr?: string;
   default_days: number;
   color_code: string;
   is_active: boolean;
@@ -144,6 +153,7 @@ export interface LeaveBalance {
 export interface LeaveBalanceSummary {
   leave_type_id: string;
   leave_type_name: string;
+  leave_type_name_tr?: string;
   color_code: string;
   allocated: number;
   used: number;

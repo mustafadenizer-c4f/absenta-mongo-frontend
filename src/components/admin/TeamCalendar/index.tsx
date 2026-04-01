@@ -23,9 +23,8 @@ import {
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import TodayIcon from '@mui/icons-material/Today';
-import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
+import { Calendar, View } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay, eachDayOfInterval, parseISO, addMonths, subMonths } from 'date-fns';
-import { enUS } from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 import { useSelector } from 'react-redux';
@@ -34,13 +33,8 @@ import { apiClient } from '../../../config/api';
 import { CalendarEvent, LeaveRequest, User, Holiday } from '../../../types';
 import ThreeMonthView from '../../common/ThreeMonthView';
 import { useLanguage } from '../../../contexts/LanguageContext';
-
-const locales = { 'en-US': enUS };
-const localizer = dateFnsLocalizer({
-  format, parse,
-  startOfWeek: (date: Date) => startOfWeek(date, { weekStartsOn: 1 }),
-  getDay, locales,
-});
+import { localizedLeaveTypeName, localizedStatus } from '../../../utils/localize';
+import { calendarLocalizer, getCalendarCulture, getCalendarMessages } from '../../../utils/calendarLocalizer';
 
 const CONFLICT_COLOR = '#FF1744';
 const HOLIDAY_COLOR = '#4CAF50';
@@ -65,7 +59,7 @@ function detectConflictDates(requests: LeaveRequest[]): Set<string> {
   return conflicts;
 }
 
-function mapLeaveToEvents(requests: LeaveRequest[]): CalendarEvent[] {
+function mapLeaveToEvents(requests: LeaveRequest[], language: string): CalendarEvent[] {
   return requests
     .filter((r) => r.status === 'approved' || r.status === 'pending')
     .map((r) => {
@@ -73,7 +67,7 @@ function mapLeaveToEvents(requests: LeaveRequest[]): CalendarEvent[] {
       const end = new Date(r.end_date);
       return {
         id: r.id,
-        title: `${r.user?.full_name ?? 'Employee'} – ${r.leave_type?.name ?? 'Leave'}`,
+        title: `${r.user?.full_name ?? 'Employee'} – ${localizedLeaveTypeName(r.leave_type, language)}`,
         start: new Date(start.getFullYear(), start.getMonth(), start.getDate()),
         end: new Date(end.getFullYear(), end.getMonth(), end.getDate() + 1),
         allDay: true,
@@ -99,7 +93,9 @@ function mapHolidaysToEvents(holidays: Holiday[]): CalendarEvent[] {
 }
 
 const AdminTeamCalendar: React.FC = () => {
-  const { langPackLabel } = useLanguage();
+  const { langPackLabel, language } = useLanguage();
+  const calendarCulture = getCalendarCulture(language);
+  const calendarMessages = getCalendarMessages(language);
   const { user } = useSelector((state: RootState) => state.auth);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useAutoClearing(7000);
@@ -163,7 +159,7 @@ const AdminTeamCalendar: React.FC = () => {
     return reqs;
   }, [leaveRequests, members, teamFilteredMembers, selectedTeam, selectedMembers]);
 
-  const leaveEvents = useMemo(() => mapLeaveToEvents(filteredRequests), [filteredRequests]);
+  const leaveEvents = useMemo(() => mapLeaveToEvents(filteredRequests, language), [filteredRequests, language]);
   const holidayEvents = useMemo(() => mapHolidaysToEvents(holidays), [holidays]);
   const events = useMemo(() => [...leaveEvents, ...holidayEvents], [leaveEvents, holidayEvents]);
   const conflictDates = useMemo(() => detectConflictDates(filteredRequests), [filteredRequests]);
@@ -207,10 +203,10 @@ const AdminTeamCalendar: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600, mb: 3 }}>{langPackLabel("txtTeamCalendar") || "Team Calendar"}</Typography>
+      <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600, mb: 2 }}>{langPackLabel("txtTeamCalendar") || "Team Calendar"}</Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2, alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1.5, alignItems: 'center' }}>
         {teams.length > 0 && (
           <TextField
             select
@@ -218,7 +214,7 @@ const AdminTeamCalendar: React.FC = () => {
             value={selectedTeam}
             onChange={(e) => { setSelectedTeam(e.target.value); setSelectedMembers([]); }}
             size="small"
-            sx={{ minWidth: 200 }}
+            sx={{ minWidth: 140, maxWidth: 180 }}
           >
             <MenuItem value="">{langPackLabel("txtAllTeams") || "All Teams"}</MenuItem>
             {teams.map((t) => (
@@ -231,15 +227,15 @@ const AdminTeamCalendar: React.FC = () => {
           value={selectedMembers} onChange={(_, v) => setSelectedMembers(v)}
           renderInput={(params) => <TextField {...params} label={langPackLabel("txtFilterByTeamMember") || "Filter by employee"} placeholder={langPackLabel("txtSelectMembers") || "Select employees"} size="small" />}
           renderTags={(value, getTagProps) => value.map((o, i) => { const { key, ...tp } = getTagProps({ index: i }); return <Chip key={key} label={o.full_name} size="small" {...tp} />; })}
-          sx={{ flex: 1, minWidth: 300 }}
+          sx={{ flex: 1, minWidth: 200 }}
         />
       </Box>
 
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2, alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1, alignItems: 'center' }}>
         {legendItems.map((lt) => (
           <Box key={lt.name} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Box sx={{ width: 14, height: 14, borderRadius: '3px', backgroundColor: lt.color }} />
-            <Typography variant="caption">{lt.name}</Typography>
+            <Box sx={{ width: 10, height: 10, borderRadius: '2px', backgroundColor: lt.color }} />
+            <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>{lt.name}</Typography>
           </Box>
         ))}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -273,8 +269,15 @@ const AdminTeamCalendar: React.FC = () => {
       </Box>
 
       {viewMode === 'calendar' ? (
-        <Box sx={{ height: { xs: 400, sm: 500, md: 600 }, '& .rbc-calendar': { fontFamily: 'inherit' } }}>
-          <Calendar<CalendarEvent> localizer={localizer} events={events} startAccessor="start" endAccessor="end"
+        <Box sx={{
+          height: { xs: 400, sm: 500, md: 600 },
+          '& .rbc-calendar': { fontFamily: 'inherit' },
+          '& .rbc-toolbar': { flexWrap: 'wrap', gap: '8px', mb: 1 },
+          '& .rbc-toolbar button': { fontSize: '0.8rem', padding: '4px 10px' },
+          '& .rbc-btn-group': { gap: '2px' },
+          '& .rbc-toolbar-label': { fontSize: '1rem', fontWeight: 600, padding: '4px 0' },
+        }}>
+          <Calendar<CalendarEvent> localizer={calendarLocalizer} culture={calendarCulture} messages={calendarMessages} events={events} startAccessor="start" endAccessor="end"
             views={['month', 'week', 'day']} view={view} date={date} onView={setView} onNavigate={setDate}
             onSelectEvent={handleSelectEvent} eventPropGetter={eventPropGetter} dayPropGetter={dayPropGetter}
             style={{ height: '100%' }} popup />
@@ -288,11 +291,11 @@ const AdminTeamCalendar: React.FC = () => {
           <>
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: selectedEvent.resource.color }} />
-              {selectedLeaveRequest.user?.full_name ?? 'Employee'} – {selectedLeaveRequest.leave_type?.name ?? 'Leave'}
+              {selectedLeaveRequest.user?.full_name ?? 'Employee'} – {localizedLeaveTypeName(selectedLeaveRequest.leave_type, language)}
             </DialogTitle>
             <DialogContent dividers>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                <Box><Typography variant="caption" color="text.secondary">{langPackLabel("txtStatus") || "Status"}</Typography><Box><Chip label={selectedLeaveRequest.status} color={statusColorMap[selectedLeaveRequest.status]} size="small" /></Box></Box>
+                <Box><Typography variant="caption" color="text.secondary">{langPackLabel("txtStatus") || "Status"}</Typography><Box><Chip label={localizedStatus(selectedLeaveRequest.status, langPackLabel)} color={statusColorMap[selectedLeaveRequest.status]} size="small" /></Box></Box>
                 <Divider />
                 <Box><Typography variant="caption" color="text.secondary">{langPackLabel("txtDates") || "Dates"}</Typography><Typography variant="body2">{new Date(selectedLeaveRequest.start_date).toLocaleDateString()} – {new Date(selectedLeaveRequest.end_date).toLocaleDateString()}</Typography></Box>
                 <Box><Typography variant="caption" color="text.secondary">{langPackLabel("txtTotalDays") || "Total Days"}</Typography><Typography variant="body2">{selectedLeaveRequest.total_days}{selectedLeaveRequest.is_half_day && ` (Half day – ${selectedLeaveRequest.half_day_period})`}</Typography></Box>

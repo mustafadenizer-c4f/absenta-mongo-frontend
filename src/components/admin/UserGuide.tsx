@@ -1,4 +1,4 @@
-// src/components/admin/UserGuide.tsx — Full Application Manual
+// src/components/admin/UserGuide.tsx — Full Application Manual (EN/TR)
 import React from 'react';
 import {
   Box,
@@ -30,269 +30,216 @@ const RoleChip: React.FC<{ label: string }> = ({ label }) => (
   <Chip label={label} size="small" color="primary" variant="outlined" sx={{ mr: 0.5, mb: 0.5 }} />
 );
 
+const Li: React.FC<{ text: string }> = ({ text }) => (
+  <ListItem><ListItemText primary={text} /></ListItem>
+);
+
 const UserGuide: React.FC = () => {
-  const { langPackLabel } = useLanguage();
+  const { langPackLabel, language } = useLanguage();
+  const t = language === 'tr';
+
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 1, color: 'primary.main', fontWeight: 600 }}>
+      <Typography variant="h5" sx={{ mb: 1, color: 'primary.main', fontWeight: 600 }}>
         {langPackLabel("txtAppManual") || "Absenta — Application Manual"}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Complete guide for all roles and features in the Absenta leave management system.
+        {t ? 'Absenta izin yönetim sistemi için tüm roller ve özellikler rehberi.' : 'Complete guide for all roles and features in the Absenta leave management system.'}
       </Typography>
 
       {/* ── Quick Start ── */}
-      <Section title="🚀 Quick Start Guide" defaultExpanded>
+      <Section title={t ? '🚀 Hızlı Başlangıç Rehberi' : '🚀 Quick Start Guide'} defaultExpanded>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Follow these steps in order when setting up your company for the first time.
-          The order matters — each step depends on the previous one.
+          {t ? 'Şirketinizi ilk kez kurarken bu adımları sırasıyla takip edin. Sıralama önemlidir — her adım bir öncekine bağlıdır.' : 'Follow these steps in order when setting up your company for the first time. The order matters — each step depends on the previous one.'}
         </Typography>
-
         <Alert severity="warning" sx={{ mb: 2 }}>
-          {langPackLabel("txtQuickStartOrderWarning") || "Complete these steps in order. For example, you cannot assign a user to a team that doesn't exist yet, or set a manager who hasn't been created."}
+          {t ? 'Bu adımları sırasıyla tamamlayın. Örneğin, henüz oluşturulmamış bir takıma kullanıcı atayamazsınız.' : 'Complete these steps in order. For example, you cannot assign a user to a team that doesn\'t exist yet.'}
         </Alert>
 
-        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Step 1: Choose Your Hierarchy</Typography>
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>{t ? 'Adım 1: Hiyerarşinizi Seçin' : 'Step 1: Choose Your Hierarchy'}</Typography>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Go to <strong>Settings → Organization</strong> and select your hierarchy profile (Flat, Teams, Departments, or Groups).
-          This determines which organizational levels are available. You can upgrade later but not downgrade.
+          {t ? 'Ayarlar → Organizasyon bölümüne gidin ve hiyerarşi profilinizi seçin (Düz, Takımlar, Departmanlar veya Gruplar). Daha sonra yükseltebilirsiniz ancak düşüremezsiniz.' : 'Go to Settings → Organization and select your hierarchy profile (Flat, Teams, Departments, or Groups). You can upgrade later but not downgrade.'}
         </Typography>
 
-        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Step 2: Create Organizational Structure</Typography>
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>{t ? 'Adım 2: Organizasyon Yapısını Oluşturun' : 'Step 2: Create Organizational Structure'}</Typography>
         <Typography variant="body2" sx={{ mb: 1 }}>
-          Build your structure top-down based on your chosen hierarchy:
+          {t ? 'Seçtiğiniz hiyerarşiye göre yapınızı yukarıdan aşağıya oluşturun:' : 'Build your structure top-down based on your chosen hierarchy:'}
         </Typography>
         <List dense>
-          <ListItem><ListItemText primary="Groups profile → Create Groups first, then Departments inside them, then Teams inside departments" /></ListItem>
-          <ListItem><ListItemText primary="Departments profile → Create Departments first, then Teams inside them" /></ListItem>
-          <ListItem><ListItemText primary="Teams profile → Create Teams directly" /></ListItem>
-          <ListItem><ListItemText primary="Flat profile → Skip this step, no structure needed" /></ListItem>
+          <Li text={t ? 'Gruplar profili → Önce Gruplar, sonra Departmanlar, sonra Takımlar' : 'Groups profile → Create Groups first, then Departments, then Teams'} />
+          <Li text={t ? 'Departmanlar profili → Önce Departmanlar, sonra Takımlar' : 'Departments profile → Create Departments first, then Teams'} />
+          <Li text={t ? 'Takımlar profili → Doğrudan Takımlar oluşturun' : 'Teams profile → Create Teams directly'} />
+          <Li text={t ? 'Düz profil → Bu adımı atlayın' : 'Flat profile → Skip this step'} />
         </List>
 
-        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Step 3: Review Leave Types</Typography>
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>{t ? 'Adım 3: İzin Türlerini Gözden Geçirin' : 'Step 3: Review Leave Types'}</Typography>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Default leave types are created automatically. Go to <strong>Leave Types</strong> to review, edit, or add new ones before creating users.
+          {t ? 'Varsayılan izin türleri otomatik oluşturulur. Kullanıcı eklemeden önce İzin Türleri sayfasından düzenleyin.' : 'Default leave types are created automatically. Go to Leave Types to review and edit before creating users.'}
         </Typography>
 
-        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Step 4: Add Holidays</Typography>
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>{t ? 'Adım 4: Tatilleri Ekleyin' : 'Step 4: Add Holidays'}</Typography>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Go to <strong>Holidays</strong> and add your company's public holidays. Do this before employees start requesting leave so day calculations are accurate from the start.
+          {t ? 'Tatiller sayfasına gidin ve resmi tatilleri ekleyin. Gün hesaplamaları doğru olması için bunu izin taleplerinden önce yapın.' : 'Go to Holidays and add public holidays. Do this before employees start requesting leave so day calculations are accurate.'}
         </Typography>
 
-        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Step 5: Create Managers First</Typography>
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>{t ? 'Adım 5: Önce Yöneticileri Oluşturun' : 'Step 5: Create Managers First'}</Typography>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Go to <strong>Users</strong> and create your managers (team managers, group managers, department managers) <strong>before</strong> creating staff.
-          This way, when you create staff members, you can immediately assign them to the correct manager.
+          {t ? 'Kullanıcılar sayfasından önce yöneticileri oluşturun. Böylece personel oluştururken doğru yöneticiyi atayabilirsiniz.' : 'Go to Users and create managers before creating staff, so you can assign the correct manager immediately.'}
         </Typography>
         <Alert severity="info" sx={{ mb: 2 }}>
-          {langPackLabel("txtQuickStartManagerTip") || "Tip: Create users in this order — department/group managers → team managers → staff. Each level needs a manager from the level above."}
+          {t ? 'İpucu: Kullanıcıları şu sırayla oluşturun — departman/grup yöneticileri → takım yöneticileri → personel.' : 'Tip: Create users in this order — department/group managers → team managers → staff.'}
         </Alert>
 
-        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Step 6: Create Staff Members</Typography>
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>{t ? 'Adım 6: Personel Oluşturun' : 'Step 6: Create Staff Members'}</Typography>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Now create your staff. For each user, set their team, manager, hire date, and birth date.
-          The default password is <strong>Pp123456</strong> — users must change it on first login.
+          {t ? 'Her kullanıcı için takım, yönetici, işe giriş tarihi ve doğum tarihi belirleyin. Varsayılan şifre: Pp123456 — ilk girişte değiştirilmelidir.' : 'For each user, set team, manager, hire date, and birth date. Default password is Pp123456 — must be changed on first login.'}
         </Typography>
 
-        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Step 7: Configure Workdays (Optional)</Typography>
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>{t ? 'Adım 7: İş Günlerini Yapılandırın (İsteğe Bağlı)' : 'Step 7: Configure Workdays (Optional)'}</Typography>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Go to <strong>Settings → Workdays</strong> to configure which days are working days, legal workdays (deducted from leave but not worked), and rest days. Default is Mon–Fri working, Saturday legal.
+          {t ? 'Ayarlar → İş Günleri bölümünden çalışma, resmi iş günü ve tatil günlerini yapılandırın.' : 'Go to Settings → Workdays to configure working days, legal workdays, and rest days.'}
         </Typography>
 
-        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Step 8: Set Up Email (Optional)</Typography>
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>{t ? 'Adım 8: E-posta Ayarlayın (İsteğe Bağlı)' : 'Step 8: Set Up Email (Optional)'}</Typography>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Go to <strong>Settings → Email</strong> to configure SMTP for email notifications (leave submissions, approvals, rejections). You can skip this and set it up later.
+          {t ? 'Ayarlar → E-posta bölümünden SMTP yapılandırmasını yapın.' : 'Go to Settings → Email to configure SMTP for email notifications.'}
         </Typography>
 
         <Alert severity="success" sx={{ mt: 1 }}>
-          {langPackLabel("txtQuickStartDone") || "That's it! Your company is ready. Employees can now log in, request leave, and managers can approve them."}
+          {t ? 'Hepsi bu kadar! Şirketiniz hazır. Çalışanlar giriş yapabilir, izin talep edebilir ve yöneticiler onaylayabilir.' : 'That\'s it! Your company is ready. Employees can now log in, request leave, and managers can approve them.'}
         </Alert>
       </Section>
 
       {/* ── Overview ── */}
-      <Section title="1. Overview" defaultExpanded>
+      <Section title={t ? '1. Genel Bakış' : '1. Overview'} defaultExpanded>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Absenta is a leave management application that supports multiple organizational hierarchies
-          and roles. It handles leave requests, approvals, balance tracking, collective leave, and
-          team calendars.
+          {t ? 'Absenta, birden fazla organizasyon hiyerarşisi ve rolü destekleyen bir izin yönetim uygulamasıdır. İzin talepleri, onaylar, bakiye takibi, toplu izin ve takım takvimleri yönetir.' : 'Absenta is a leave management application that supports multiple organizational hierarchies and roles. It handles leave requests, approvals, balance tracking, collective leave, and team calendars.'}
         </Typography>
-        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Supported Roles</Typography>
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>{t ? 'Desteklenen Roller' : 'Supported Roles'}</Typography>
         <List dense>
-          <ListItem><ListItemText primary="Staff" secondary="Regular employees — request leave, view balances and history" /></ListItem>
-          <ListItem><ListItemText primary="Manager (Team Manager)" secondary="Manages direct reports — approves leave, views team calendar and balances" /></ListItem>
-          <ListItem><ListItemText primary="Group Manager" secondary="Manages a group of teams — approves leave for group members, views group-wide data" /></ListItem>
-          <ListItem><ListItemText primary="Department Manager" secondary="Manages an entire department — approves leave, views all teams and balances in the department" /></ListItem>
-          <ListItem><ListItemText primary="Admin" secondary="Full system access — manages users, leave types, holidays, collective leave, settings, and company-wide calendar" /></ListItem>
-          <ListItem><ListItemText primary="Supervisor" secondary="Super-admin — manages multiple companies" /></ListItem>
+          <ListItem><ListItemText primary={t ? 'Personel' : 'Staff'} secondary={t ? 'Normal çalışanlar — izin talep eder, bakiye ve geçmişi görüntüler' : 'Regular employees — request leave, view balances and history'} /></ListItem>
+          <ListItem><ListItemText primary={t ? 'Yönetici (Takım Yöneticisi)' : 'Manager (Team Manager)'} secondary={t ? 'Doğrudan raporları yönetir — izin onaylar, takım takvimi ve bakiyelerini görür' : 'Manages direct reports — approves leave, views team calendar and balances'} /></ListItem>
+          <ListItem><ListItemText primary={t ? 'Grup Yöneticisi' : 'Group Manager'} secondary={t ? 'Bir grup takımı yönetir — grup üyeleri için izin onaylar' : 'Manages a group of teams — approves leave for group members'} /></ListItem>
+          <ListItem><ListItemText primary={t ? 'Departman Yöneticisi' : 'Department Manager'} secondary={t ? 'Tüm departmanı yönetir — izin onaylar, departmandaki tüm takımları görür' : 'Manages an entire department — approves leave, views all teams in the department'} /></ListItem>
+          <ListItem><ListItemText primary={t ? 'Admin' : 'Admin'} secondary={t ? 'Tam sistem erişimi — kullanıcılar, izin türleri, tatiller, ayarlar ve şirket geneli takvim yönetir' : 'Full system access — manages users, leave types, holidays, settings, and company-wide calendar'} /></ListItem>
+          <ListItem><ListItemText primary={t ? 'Süpervizör' : 'Supervisor'} secondary={t ? 'Süper yönetici — birden fazla şirketi yönetir' : 'Super-admin — manages multiple companies'} /></ListItem>
         </List>
       </Section>
 
       {/* ── Staff Features ── */}
-      <Section title="2. Staff Features">
-        <Box sx={{ mb: 1 }}><RoleChip label="Staff" /><RoleChip label="Manager" /><RoleChip label="Group Manager" /><RoleChip label="Department Manager" /></Box>
+      <Section title={t ? '2. Personel Özellikleri' : '2. Staff Features'}>
+        <Box sx={{ mb: 1 }}><RoleChip label={t ? 'Personel' : 'Staff'} /><RoleChip label={t ? 'Yönetici' : 'Manager'} /><RoleChip label={t ? 'Grup Yöneticisi' : 'Group Manager'} /><RoleChip label={t ? 'Departman Yöneticisi' : 'Dept. Manager'} /></Box>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          All employees (including managers) have access to these personal features.
+          {t ? 'Tüm çalışanlar (yöneticiler dahil) bu kişisel özelliklere erişebilir.' : 'All employees (including managers) have access to these personal features.'}
         </Typography>
-
-        <Typography variant="subtitle2" fontWeight={600}>{langPackLabel("txtDashboard") || "Dashboard"}</Typography>
+        <Typography variant="subtitle2" fontWeight={600}>{t ? 'Panel' : 'Dashboard'}</Typography>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Shows your personal leave balances (Annual, Casual, Sick always visible; other types shown if used).
-          Annual leave entitlement is calculated based on Turkish labor law using your hire date and seniority.
+          {t ? 'Kişisel izin bakiyelerinizi gösterir. Yıllık izin hakkı, işe giriş tarihi ve kıdeme göre Türk iş hukukuna uygun hesaplanır.' : 'Shows your personal leave balances. Annual leave entitlement is calculated based on Turkish labor law using your hire date and seniority.'}
         </Typography>
-
-        <Typography variant="subtitle2" fontWeight={600}>{langPackLabel("txtRequestLeave") || "Request Leave"}</Typography>
+        <Typography variant="subtitle2" fontWeight={600}>{t ? 'İzin Talebi' : 'Request Leave'}</Typography>
         <List dense>
-          <ListItem><ListItemText primary="Select leave type, start/end dates, and optionally a reason" /></ListItem>
-          <ListItem><ListItemText primary="Half-day leave is supported (morning or afternoon)" /></ListItem>
-          <ListItem><ListItemText primary="Weekends and public holidays are automatically excluded from the day count" /></ListItem>
-          <ListItem><ListItemText primary="Your remaining balance is shown before submission" /></ListItem>
+          <Li text={t ? 'İzin türü, başlangıç/bitiş tarihi ve isteğe bağlı neden seçin' : 'Select leave type, start/end dates, and optionally a reason'} />
+          <Li text={t ? 'Yarım gün izin desteklenir (sabah veya öğleden sonra)' : 'Half-day leave is supported (morning or afternoon)'} />
+          <Li text={t ? 'Hafta sonları ve resmi tatiller gün sayısından otomatik çıkarılır' : 'Weekends and public holidays are automatically excluded from the day count'} />
+          <Li text={t ? 'Gönderim öncesi kalan bakiyeniz gösterilir' : 'Your remaining balance is shown before submission'} />
         </List>
-
-        <Typography variant="subtitle2" fontWeight={600}>{langPackLabel("txtLeaveHistory") || "Leave History"}</Typography>
+        <Typography variant="subtitle2" fontWeight={600}>{t ? 'İzin Geçmişi' : 'Leave History'}</Typography>
         <List dense>
-          <ListItem><ListItemText primary="View all your past and current leave requests" /></ListItem>
-          <ListItem><ListItemText primary="Filter by status, leave type, and date range" /></ListItem>
-          <ListItem><ListItemText primary="Cancel pending requests using the cancel button" /></ListItem>
+          <Li text={t ? 'Tüm geçmiş ve mevcut izin taleplerinizi görüntüleyin' : 'View all your past and current leave requests'} />
+          <Li text={t ? 'Durum, izin türü ve tarih aralığına göre filtreleyin' : 'Filter by status, leave type, and date range'} />
+          <Li text={t ? 'Bekleyen talepleri iptal edin' : 'Cancel pending requests'} />
         </List>
-
-        <Typography variant="subtitle2" fontWeight={600}>{langPackLabel("txtCalendar") || "Calendar"}</Typography>
+        <Typography variant="subtitle2" fontWeight={600}>{t ? 'Takvim' : 'Calendar'}</Typography>
         <Typography variant="body2">
-          Personal calendar showing your approved/pending leave and company holidays.
-          Supports month, week, day views and a 3-month overview.
+          {t ? 'Onaylanan/bekleyen izinlerinizi ve şirket tatillerini gösteren kişisel takvim. Ay, hafta, gün görünümleri ve 3 aylık genel bakış desteklenir.' : 'Personal calendar showing your approved/pending leave and company holidays. Supports month, week, day views and a 3-month overview.'}
         </Typography>
       </Section>
 
       {/* ── Manager Features ── */}
-      <Section title="3. Manager Features">
-        <Box sx={{ mb: 1 }}><RoleChip label="Manager" /></Box>
-
-        <Typography variant="subtitle2" fontWeight={600}>Approvals</Typography>
+      <Section title={t ? '3. Yönetici Özellikleri' : '3. Manager Features'}>
+        <Box sx={{ mb: 1 }}><RoleChip label={t ? 'Yönetici' : 'Manager'} /></Box>
+        <Typography variant="subtitle2" fontWeight={600}>{t ? 'Onaylar' : 'Approvals'}</Typography>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          View and approve/reject leave requests from your direct reports.
-          Each request shows the employee name, dates, leave type, and remaining balance.
+          {t ? 'Doğrudan raporlarınızdan gelen izin taleplerini görüntüleyin ve onaylayın/reddedin.' : 'View and approve/reject leave requests from your direct reports.'}
         </Typography>
-
-        <Typography variant="subtitle2" fontWeight={600}>Team View (Calendar)</Typography>
+        <Typography variant="subtitle2" fontWeight={600}>{t ? 'Takım Takvimi' : 'Team View (Calendar)'}</Typography>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Calendar showing all direct reports' leave. Filter by team or individual employee.
-          Conflict dates (2+ members off) are highlighted in red.
-        </Typography>
-
-        <Typography variant="subtitle2" fontWeight={600}>Team Balances</Typography>
+          {t ? 'Tüm doğrudan raporların izinlerini gösteren takvim. Çakışma tarihleri kırmızı ile vurgulanır.' : 'Calendar showing all direct reports\' leave. Conflict dates are highlighted in red.'}</Typography>
+        <Typography variant="subtitle2" fontWeight={600}>{t ? 'Takım Bakiyeleri' : 'Team Balances'}</Typography>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Table showing leave balances for all direct reports. Click on a balance cell to see
-          individual request details. Only leave types that are actively used are shown as columns.
-        </Typography>
-
-        <Typography variant="subtitle2" fontWeight={600}>Leave History (Team)</Typography>
-        <Typography variant="body2">
-          Managers see their own leave plus their team's leave in the Leave History page.
-          Use the Team filter to view a specific team, and the Employee filter to narrow down
-          to a specific person or "Only Team" (excludes your own requests).
+          {t ? 'Tüm doğrudan raporların izin bakiyelerini gösteren tablo.' : 'Table showing leave balances for all direct reports.'}
         </Typography>
       </Section>
 
-      {/* ── Group Manager Features ── */}
-      <Section title="4. Group Manager Features">
-        <Box sx={{ mb: 1 }}><RoleChip label="Group Manager" /></Box>
+      {/* ── Group / Dept Manager ── */}
+      <Section title={t ? '4. Grup Yöneticisi Özellikleri' : '4. Group Manager Features'}>
+        <Box sx={{ mb: 1 }}><RoleChip label={t ? 'Grup Yöneticisi' : 'Group Manager'} /></Box>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Same as Manager features but scoped to all members in the group (across multiple teams).
+          {t ? 'Yönetici özellikleriyle aynı, ancak gruptaki tüm üyelere (birden fazla takım) kapsamlıdır.' : 'Same as Manager features but scoped to all members in the group (across multiple teams).'}
         </Typography>
-        <List dense>
-          <ListItem><ListItemText primary="Group Approvals — approve/reject leave for all group members" /></ListItem>
-          <ListItem><ListItemText primary="Group Team View — calendar with team filter for all group members" /></ListItem>
-          <ListItem><ListItemText primary="Group Balances — balance table for all group members" /></ListItem>
-          <ListItem><ListItemText primary="Leave History — see group members' leave with team and employee filters" /></ListItem>
-        </List>
       </Section>
 
-      {/* ── Department Manager Features ── */}
-      <Section title="5. Department Manager Features">
-        <Box sx={{ mb: 1 }}><RoleChip label="Department Manager" /></Box>
+      <Section title={t ? '5. Departman Yöneticisi Özellikleri' : '5. Department Manager Features'}>
+        <Box sx={{ mb: 1 }}><RoleChip label={t ? 'Departman Yöneticisi' : 'Department Manager'} /></Box>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Same as Manager features but scoped to the entire department (all teams within the department).
+          {t ? 'Yönetici özellikleriyle aynı, ancak tüm departmana (departmandaki tüm takımlar) kapsamlıdır.' : 'Same as Manager features but scoped to the entire department (all teams within the department).'}
         </Typography>
-        <List dense>
-          <ListItem><ListItemText primary="Approvals — approve/reject leave for all department staff" /></ListItem>
-          <ListItem><ListItemText primary="Team Calendar — calendar with team filter for all department members, includes holidays" /></ListItem>
-          <ListItem><ListItemText primary="Balances — balance table for all department members with team filter" /></ListItem>
-          <ListItem><ListItemText primary="Leave History — see department members' leave with team and employee filters" /></ListItem>
-        </List>
       </Section>
 
       {/* ── Admin Features ── */}
-      <Section title="6. Admin Features">
+      <Section title={t ? '6. Admin Özellikleri' : '6. Admin Features'}>
         <Box sx={{ mb: 1 }}><RoleChip label="Admin" /></Box>
-
-        <Typography variant="subtitle2" fontWeight={600}>{langPackLabel("txtUserManagement") || "User Management"}</Typography>
+        <Typography variant="subtitle2" fontWeight={600}>{t ? 'Kullanıcı Yönetimi' : 'User Management'}</Typography>
         <List dense>
-          <ListItem><ListItemText primary="Add new users: register via the signup page, then edit profile in User Management" /></ListItem>
-          <ListItem><ListItemText primary="Edit user profiles: name, role, hire date, birth date, team, group, department, manager" /></ListItem>
-          <ListItem><ListItemText primary="Default temporary password for new users: Pp123456 (must be changed on first login)" /></ListItem>
+          <Li text={t ? 'Kullanıcı Yönetimi sayfasından yeni kullanıcı ekleyin — varsayılan şifre: Pp123456' : 'Add new users — default password: Pp123456 (must be changed on first login)'} />
+          <Li text={t ? 'Kullanıcı profillerini düzenleyin: ad, rol, işe giriş tarihi, doğum tarihi, takım, yönetici' : 'Edit user profiles: name, role, hire date, birth date, team, manager'} />
         </List>
-
-        <Typography variant="subtitle2" fontWeight={600}>Organization Structure</Typography>
+        <Typography variant="subtitle2" fontWeight={600}>{t ? 'Organizasyon Yapısı' : 'Organization Structure'}</Typography>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Depending on the hierarchy profile (flat, teams, departments, groups), you can manage
-          Teams, Departments, and Groups from the sidebar. Assign users to the appropriate
-          organizational units.
+          {t ? 'Hiyerarşi profiline bağlı olarak kenar çubuğundan Takımlar, Departmanlar ve Grupları yönetebilirsiniz.' : 'Depending on the hierarchy profile, you can manage Teams, Departments, and Groups from the sidebar.'}
         </Typography>
-
-        <Typography variant="subtitle2" fontWeight={600}>{langPackLabel("txtLeaveTypes") || "Leave Types"}</Typography>
+        <Typography variant="subtitle2" fontWeight={600}>{t ? 'İzin Türleri' : 'Leave Types'}</Typography>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Create and manage leave types (e.g., Annual Leave, Sick Leave, Casual Leave).
-          Each type has a name, default days, color code, and active/inactive status.
+          {t ? 'İzin türlerini oluşturun ve yönetin. Her türün adı, varsayılan gün sayısı, renk kodu ve aktif/pasif durumu vardır.' : 'Create and manage leave types. Each type has a name, default days, color code, and active/inactive status.'}
         </Typography>
-
-        <Typography variant="subtitle2" fontWeight={600}>{langPackLabel("txtHolidays") || "Holidays"}</Typography>
+        <Typography variant="subtitle2" fontWeight={600}>{t ? 'Tatiller' : 'Holidays'}</Typography>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Define company holidays. These are automatically excluded when calculating leave days.
-          Holidays can be single-day or multi-day, and optionally recurring.
+          {t ? 'Şirket tatillerini tanımlayın. İzin günü hesaplanırken otomatik olarak çıkarılır.' : 'Define company holidays. These are automatically excluded when calculating leave days.'}
         </Typography>
-
-        <Typography variant="subtitle2" fontWeight={600}>{langPackLabel("txtCollectiveLeave") || "Collective Leave"}</Typography>
+        <Typography variant="subtitle2" fontWeight={600}>{t ? 'Toplu İzin' : 'Collective Leave'}</Typography>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Schedule company-wide leave days (e.g., bridge days). This automatically creates
-          approved leave requests for all eligible employees and deducts from their annual balance.
-          Duplicate prevention is built in — the same date range won't be applied twice.
+          {t ? 'Şirket geneli izin günleri planlayın. Tüm uygun çalışanlar için otomatik onaylı izin talebi oluşturur.' : 'Schedule company-wide leave days. Automatically creates approved leave requests for all eligible employees.'}
         </Typography>
-
-        <Typography variant="subtitle2" fontWeight={600}>{langPackLabel("txtTeamCalendar") || "Team Calendar"}</Typography>
-        <Typography variant="body2" sx={{ mb: 2 }}>
-          Company-wide calendar showing all employees' leave. Filter by team or individual employee.
-        </Typography>
-
-        <Typography variant="subtitle2" fontWeight={600}>{langPackLabel("txtSettings") || "Settings"}</Typography>
+        <Typography variant="subtitle2" fontWeight={600}>{t ? 'Ayarlar' : 'Settings'}</Typography>
         <Typography variant="body2">
-          Configure company settings and organizational hierarchy profile.
+          {t ? 'Şirket ayarlarını, organizasyon hiyerarşisini, iş günlerini ve e-posta yapılandırmasını yönetin.' : 'Configure company settings, organizational hierarchy, workdays, and email.'}
         </Typography>
       </Section>
 
       {/* ── Turkish Annual Leave Law ── */}
-      <Section title="7. Turkish Annual Leave Law (Entitlement Calculation)">
+      <Section title={t ? '7. Türk Yıllık İzin Kanunu (Hak Hesaplama)' : '7. Turkish Annual Leave Law (Entitlement Calculation)'}>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Annual leave entitlement is automatically calculated based on Turkish Labor Law (Article 53).
+          {t ? 'Yıllık izin hakkı, Türk İş Kanunu (Madde 53) esas alınarak otomatik hesaplanır.' : 'Annual leave entitlement is automatically calculated based on Turkish Labor Law (Article 53).'}
         </Typography>
         <List dense>
-          <ListItem><ListItemText primary="1–5 years of service → 14 days" /></ListItem>
-          <ListItem><ListItemText primary="5–15 years of service → 20 days" /></ListItem>
-          <ListItem><ListItemText primary="15+ years of service → 26 days" /></ListItem>
-          <ListItem><ListItemText primary="Employees under 18 or over 50 → minimum 20 days" /></ListItem>
+          <Li text={t ? '1–5 yıl hizmet → 14 gün' : '1–5 years of service → 14 days'} />
+          <Li text={t ? '5–15 yıl hizmet → 20 gün' : '5–15 years of service → 20 days'} />
+          <Li text={t ? '15+ yıl hizmet → 26 gün' : '15+ years of service → 26 days'} />
+          <Li text={t ? '18 yaş altı veya 50 yaş üstü çalışanlar → minimum 20 gün' : 'Employees under 18 or over 50 → minimum 20 days'} />
         </List>
         <Alert severity="info" sx={{ mt: 1 }}>
-          Seniority is calculated from the hire date. Age-based adjustments use the birth date.
-          Both fields must be set in the user profile for accurate calculation.
+          {t ? 'Kıdem, işe giriş tarihinden hesaplanır. Yaşa dayalı düzeltmeler doğum tarihini kullanır. Doğru hesaplama için her iki alan da doldurulmalıdır.' : 'Seniority is calculated from the hire date. Age-based adjustments use the birth date. Both fields must be set for accurate calculation.'}
         </Alert>
       </Section>
 
       {/* ── Tips ── */}
-      <Section title="8. Tips & Best Practices">
+      <Section title={t ? '8. İpuçları ve En İyi Uygulamalar' : '8. Tips & Best Practices'}>
         <List dense>
-          <ListItem><ListItemText primary="Always set hire date and birth date for employees — these drive entitlement calculations" /></ListItem>
-          <ListItem><ListItemText primary="Define holidays before the start of each year so leave day calculations are accurate" /></ListItem>
-          <ListItem><ListItemText primary="Use collective leave sparingly — it deducts from everyone's annual balance" /></ListItem>
-          <ListItem><ListItemText primary="Check the Team Calendar regularly for scheduling conflicts (highlighted in red)" /></ListItem>
-          <ListItem><ListItemText primary="Managers should review pending approvals promptly to avoid bottlenecks" /></ListItem>
+          <Li text={t ? 'Çalışanlar için her zaman işe giriş tarihi ve doğum tarihi belirleyin — hak hesaplamaları bunlara bağlıdır' : 'Always set hire date and birth date for employees — these drive entitlement calculations'} />
+          <Li text={t ? 'Her yılın başında tatilleri tanımlayın, böylece izin günü hesaplamaları doğru olur' : 'Define holidays before the start of each year so leave day calculations are accurate'} />
+          <Li text={t ? 'Toplu izni dikkatli kullanın — herkesin yıllık bakiyesinden düşer' : 'Use collective leave sparingly — it deducts from everyone\'s annual balance'} />
+          <Li text={t ? 'Çakışmalar için Takım Takvimini düzenli kontrol edin (kırmızı ile vurgulanır)' : 'Check the Team Calendar regularly for scheduling conflicts (highlighted in red)'} />
+          <Li text={t ? 'Yöneticiler bekleyen onayları hızlıca incelemelidir' : 'Managers should review pending approvals promptly to avoid bottlenecks'} />
         </List>
       </Section>
     </Box>

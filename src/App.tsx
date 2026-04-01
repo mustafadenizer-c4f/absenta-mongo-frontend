@@ -2,14 +2,15 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Provider, useDispatch, useSelector } from 'react-redux';
-import { ThemeProvider } from '@mui/material/styles';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { trTR } from '@mui/material/locale';
 import { store, RootState, AppDispatch } from './store';
 import { checkSession } from './store/slices/authSlice';
 import { fetchHolidays } from './store/slices/leaveSlice';
-import theme from './theme';
+import baseTheme from './theme';
 import { User } from './types';
-import { LanguageProvider } from './contexts/LanguageContext';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
 // Auth components
 import Login from './components/auth/Login';
@@ -41,7 +42,7 @@ import { GroupManagerDashboard, GroupManagerApprovals, GroupManagerTeamView, Gro
 import { GeneralManagerDashboard, GeneralManagerTeamView, CompanyBalances, DepartmentManagerApprovals } from './components/general-manager';
 
 // Supervisor components
-import { SupervisorDashboard, SupervisorLabelManagement, SupervisorSystemGuide } from './components/supervisor';
+import { SupervisorDashboard, SupervisorCompanies, SupervisorLabelManagement, SupervisorSystemGuide, SupervisorDefaultLeaveTypes } from './components/supervisor';
 
 // Profile component
 import ProfilePage from './components/profile/ProfilePage';
@@ -211,6 +212,13 @@ const AppContent: React.FC = () => {
             </Layout>
           </ProtectedRoute>
         } />
+        <Route path="/supervisor/companies" element={
+          <ProtectedRoute requireSupervisor>
+            <Layout>
+              <SupervisorCompanies />
+            </Layout>
+          </ProtectedRoute>
+        } />
         <Route path="/supervisor/labels" element={
           <ProtectedRoute requireSupervisor>
             <Layout>
@@ -222,6 +230,13 @@ const AppContent: React.FC = () => {
           <ProtectedRoute requireSupervisor>
             <Layout>
               <SupervisorSystemGuide />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/supervisor/default-leave-types" element={
+          <ProtectedRoute requireSupervisor>
+            <Layout>
+              <SupervisorDefaultLeaveTypes />
             </Layout>
           </ProtectedRoute>
         } />
@@ -371,18 +386,28 @@ const AppContent: React.FC = () => {
   );
 };
 
+// Wrapper that applies MUI locale based on current language
+const LocalizedThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { language } = useLanguage();
+  const theme = React.useMemo(
+    () => language === 'tr' ? createTheme(baseTheme, trTR) : baseTheme,
+    [language]
+  );
+  return <ThemeProvider theme={theme}>{children}</ThemeProvider>;
+};
+
 // Main App component
 const App: React.FC = () => {
   return (
     <Provider store={store}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <ErrorBoundary>
-          <LanguageProvider>
+      <LanguageProvider>
+        <LocalizedThemeProvider>
+          <CssBaseline />
+          <ErrorBoundary>
             <AppContent />
-          </LanguageProvider>
-        </ErrorBoundary>
-      </ThemeProvider>
+          </ErrorBoundary>
+        </LocalizedThemeProvider>
+      </LanguageProvider>
     </Provider>
   );
 };

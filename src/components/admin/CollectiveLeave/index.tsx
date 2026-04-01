@@ -43,6 +43,7 @@ import Swal from 'sweetalert2';
 import { CollectiveLeaveService } from '../../../services/collectiveLeave';
 import { useAutoClearing } from '../../../hooks/useAutoClearing';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import LocalizedDatePicker from '../../common/LocalizedDatePicker';
 
 type Scope = 'company' | 'group' | 'department' | 'team';
 
@@ -211,12 +212,13 @@ const CollectiveLeavePage: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600 }}>
           {langPackLabel("txtCollectiveLeaveManagement") || "Collective Leave Management"}
         </Typography>
         <Button
           variant="outlined"
+          size="small"
           startIcon={<Refresh />}
           onClick={() => companyId && dispatch(fetchCollectiveLeaves(companyId))}
         >{langPackLabel("txtRefresh") || "Refresh"}</Button>
@@ -246,31 +248,29 @@ const CollectiveLeavePage: React.FC = () => {
       )}
 
       {/* Create Collective Leave Form */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2 }}>
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Typography variant="subtitle1" sx={{ mb: 1.5, fontWeight: 600 }}>
           {langPackLabel("txtCreateCollectiveLeave") || "Create Collective Leave"}
         </Typography>
         <form onSubmit={handleSubmit}>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-start' }}>
-            <TextField
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'flex-start' }}>
+            <LocalizedDatePicker
               label={langPackLabel("txtStartDate") || "Start Date"}
-              type="date"
-              required
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              slotProps={{ inputLabel: { shrink: true } }}
-              sx={{ minWidth: 180 }}
-            />
-            <TextField
-              label={langPackLabel("txtEndDate") || "End Date"}
-              type="date"
+              onChange={setStartDate}
+              size="small"
               required
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              slotProps={{ inputLabel: { shrink: true } }}
-              sx={{ minWidth: 180 }}
+              sx={{ minWidth: 150 }}
             />
-            <FormControl sx={{ minWidth: 200 }}>
+            <LocalizedDatePicker
+              label={langPackLabel("txtEndDate") || "End Date"}
+              value={endDate}
+              onChange={setEndDate}
+              size="small"
+              required
+              sx={{ minWidth: 150 }}
+            />
+            <FormControl size="small" sx={{ minWidth: 140 }}>
               <InputLabel>{langPackLabel("txtScope") || "Scope"}</InputLabel>
               <Select
                 value={scope}
@@ -286,7 +286,7 @@ const CollectiveLeavePage: React.FC = () => {
             </FormControl>
 
             {scope !== 'company' && (
-              <FormControl sx={{ minWidth: 200 }}>
+              <FormControl size="small" sx={{ minWidth: 160 }}>
                 <InputLabel>{langPackLabel("txtScopeSelection") || "Scope Selection"}</InputLabel>
                 <Select
                   value={scopeId}
@@ -303,15 +303,17 @@ const CollectiveLeavePage: React.FC = () => {
               </FormControl>
             )}
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Chip
                 label={`${calculatedDays} ${langPackLabel("txtWorkingDays") || "working days"}`}
                 color={calculatedDays > 0 ? 'primary' : 'default'}
                 variant="outlined"
+                size="small"
               />
               <Button
                 type="submit"
                 variant="contained"
+                size="small"
                 startIcon={<Add />}
                 disabled={loading || calculatedDays === 0 || !scopeId}
               >

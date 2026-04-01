@@ -1,19 +1,10 @@
 // src/components/common/ThreeMonthView.tsx — Shared 3-month calendar panel (responsive)
 import React from 'react';
 import { Box, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay, addMonths, subMonths } from 'date-fns';
-import { enUS } from 'date-fns/locale/en-US';
-
-const locales = { 'en-US': enUS };
-
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: (date: Date) => startOfWeek(date, { weekStartsOn: 1 }),
-  getDay,
-  locales,
-});
+import { Calendar } from 'react-big-calendar';
+import { format, addMonths } from 'date-fns';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { calendarLocalizer, getCalendarCulture, getDateLocale } from '../../utils/calendarLocalizer';
 
 interface ThreeMonthViewProps {
   date: Date;
@@ -31,8 +22,11 @@ const ThreeMonthView: React.FC<ThreeMonthViewProps> = ({
   dayPropGetter,
 }) => {
   const theme = useTheme();
+  const { language } = useLanguage();
+  const calendarCulture = getCalendarCulture(language);
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const months = [subMonths(date, 1), date, addMonths(date, 1)];
+  const months = [date, addMonths(date, 1), addMonths(date, 2)];
+  const formatMonth = (d: Date) => format(d, 'MMMM yyyy', { locale: getDateLocale(language) });
 
   return (
     <Box
@@ -46,10 +40,11 @@ const ThreeMonthView: React.FC<ThreeMonthViewProps> = ({
       {months.map((monthDate, idx) => (
         <Box key={idx} sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="subtitle2" align="center" sx={{ mb: 0.5, fontWeight: 600 }}>
-            {format(monthDate, 'MMMM yyyy')}
+            {formatMonth(monthDate)}
           </Typography>
           <Calendar
-            localizer={localizer}
+            localizer={calendarLocalizer}
+            culture={calendarCulture}
             events={events}
             date={monthDate}
             view="month"

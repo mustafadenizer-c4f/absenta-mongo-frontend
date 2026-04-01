@@ -20,9 +20,8 @@ import {
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import TodayIcon from '@mui/icons-material/Today';
-import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
+import { Calendar, View } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay, subMonths, addMonths } from 'date-fns';
-import { enUS } from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 import { RootState, AppDispatch } from '../../store';
@@ -32,16 +31,8 @@ import { apiClient } from '../../config/api';
 import { CalendarEvent, LeaveRequest, Holiday } from '../../types';
 import ThreeMonthView from '../common/ThreeMonthView';
 import { useLanguage } from '../../contexts/LanguageContext';
-
-const locales = { 'en-US': enUS };
-
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: (date: Date) => startOfWeek(date, { weekStartsOn: 1 }),
-  getDay,
-  locales,
-});
+import { localizedLeaveTypeName, localizedStatus, formatLocalDate } from '../../utils/localize';
+import { calendarLocalizer, getCalendarCulture, getCalendarMessages } from '../../utils/calendarLocalizer';
 
 const HOLIDAY_COLOR = '#FF6B6B';
 
@@ -131,7 +122,9 @@ const CalendarLegend: React.FC<{ leaveTypes: { name: string; color: string }[] }
 };
 
 const CalendarView: React.FC = () => {
-  const { langPackLabel } = useLanguage();
+  const { langPackLabel, language } = useLanguage();
+  const calendarCulture = getCalendarCulture(language);
+  const calendarMessages = getCalendarMessages(language);
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
   const { holidays, loading: holidayLoading, error } = useSelector(
@@ -209,7 +202,7 @@ const CalendarView: React.FC = () => {
         const e = new Date(r.end_date);
         return {
           id: r.id,
-          title: r.leave_type?.name ?? 'Leave',
+          title: localizedLeaveTypeName(r.leave_type, language),
           start: new Date(s.getFullYear(), s.getMonth(), s.getDate()),
           end: new Date(e.getFullYear(), e.getMonth(), e.getDate() + 1),
           allDay: true,
@@ -224,7 +217,7 @@ const CalendarView: React.FC = () => {
         const e = new Date(r.end_date);
         return {
           id: `team-${r.id}`,
-          title: `${r.user?.full_name ?? 'Colleague'} – ${r.leave_type?.name ?? 'Leave'}`,
+          title: `${r.user?.full_name ?? 'Colleague'} – ${localizedLeaveTypeName(r.leave_type, language)}`,
           start: new Date(s.getFullYear(), s.getMonth(), s.getDate()),
           end: new Date(e.getFullYear(), e.getMonth(), e.getDate() + 1),
           allDay: true,
@@ -305,7 +298,7 @@ const CalendarView: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600, mb: 3 }}>{langPackLabel("txtCalendar") || "Calendar"}</Typography>
+      <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600, mb: 3 }}>{langPackLabel("txtCalendar") || "Calendar"}</Typography>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -337,9 +330,18 @@ const CalendarView: React.FC = () => {
       </Box>
 
       {viewMode === 'calendar' ? (
-        <Box sx={{ height: { xs: 400, sm: 500, md: 600 }, '& .rbc-calendar': { fontFamily: 'inherit' } }}>
+        <Box sx={{
+          height: { xs: 400, sm: 500, md: 600 },
+          '& .rbc-calendar': { fontFamily: 'inherit' },
+          '& .rbc-toolbar': { flexWrap: 'wrap', gap: '8px', mb: 1 },
+          '& .rbc-toolbar button': { fontSize: '0.8rem', padding: '4px 10px' },
+          '& .rbc-btn-group': { gap: '2px' },
+          '& .rbc-toolbar-label': { fontSize: '1rem', fontWeight: 600, padding: '4px 0' },
+        }}>
           <Calendar<CalendarEvent>
-            localizer={localizer}
+            localizer={calendarLocalizer}
+            culture={calendarCulture}
+            messages={calendarMessages}
             events={events}
             startAccessor="start"
             endAccessor="end"
@@ -383,7 +385,7 @@ const CalendarView: React.FC = () => {
                   backgroundColor: selectedEvent.resource.color,
                 }}
               />
-              {selectedLeaveRequest.leave_type?.name ?? 'Leave'}
+              {localizedLeaveTypeName(selectedLeaveRequest.leave_type, language)}
             </DialogTitle>
             <DialogContent dividers>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -391,7 +393,7 @@ const CalendarView: React.FC = () => {
                   <Typography variant="caption" color="text.secondary">{langPackLabel("txtStatus") || "Status"}</Typography>
                   <Box>
                     <Chip
-                      label={selectedLeaveRequest.status}
+                      label={localizedStatus(selectedLeaveRequest.status, langPackLabel)}
                       color={statusColorMap[selectedLeaveRequest.status]}
                       size="small"
                     />
@@ -401,8 +403,8 @@ const CalendarView: React.FC = () => {
                 <Box>
                   <Typography variant="caption" color="text.secondary">{langPackLabel("txtDates") || "Dates"}</Typography>
                   <Typography variant="body2">
-                    {new Date(selectedLeaveRequest.start_date).toLocaleDateString()} –{' '}
-                    {new Date(selectedLeaveRequest.end_date).toLocaleDateString()}
+                    {formatLocalDate(selectedLeaveRequest.start_date, language)} –{' '}
+                    {formatLocalDate(selectedLeaveRequest.end_date, language)}
                   </Typography>
                 </Box>
                 <Box>

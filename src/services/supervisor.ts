@@ -27,6 +27,11 @@ export const SupervisorService = {
     return data;
   },
 
+  async updateCompany(companyId: string, name: string): Promise<Company> {
+    const data = await apiClient.put<Company>(`/companies/${companyId}`, { name });
+    return data;
+  },
+
   async resetAdminPassword(userId: string): Promise<void> {
     await apiClient.post(`/supervisor/reset-password/${userId}`);
   },

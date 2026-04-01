@@ -32,13 +32,12 @@
     "react-scripts": "5.0.1",
     "recharts": "^3.8.0",
     "sweetalert2": "^11.26.23",
-    "typescript": "^4.9.5",
     "web-vitals": "^2.1.4",
     "yup": "^1.7.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "set NODE_OPTIONS=--max-old-space-size=4096 && react-scripts start",
+    "build": "set NODE_OPTIONS=--max-old-space-size=4096 && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "deploy": "npm run build && gh-pages -d build"
@@ -69,6 +68,7 @@
   "devDependencies": {
     "@types/react-big-calendar": "^1.16.3",
     "@types/react-redux": "^7.1.34",
-    "fast-check": "^4.6.0"
+    "fast-check": "^4.6.0",
+    "typescript": "^5.9.3"
   }
 }

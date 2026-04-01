@@ -44,6 +44,8 @@ import { fetchCompanies, fetchGroups, fetchDepartments } from '../../../store/sl
 import { LeaveService, LeaveRequestFilters } from '../../../services/leave';
 import { LeaveRequest, User, Company, Group, Department } from '../../../types';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { localizedLeaveTypeName, localizedStatus, formatLocalDate } from '../../../utils/localize';
+import LocalizedDatePicker from '../../common/LocalizedDatePicker';
 
 interface ReportLeaveRequest extends LeaveRequest {
   user?: User & {
@@ -54,7 +56,7 @@ interface ReportLeaveRequest extends LeaveRequest {
 }
 
 const AdminReports: React.FC = () => {
-  const { langPackLabel } = useLanguage();
+  const { langPackLabel, language } = useLanguage();
   const dispatch = useDispatch<AppDispatch>();
   const { user: currentUser } = useSelector((state: RootState) => state.auth);
   const { companies, groups, departments } = useSelector((state: RootState) => state.organization);
@@ -281,19 +283,20 @@ const AdminReports: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Assessment color="primary" />
-          <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600 }}>
+          <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600 }}>
             {langPackLabel("txtAdminLeaveReports") || "Admin Leave Reports"}
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="outlined" startIcon={<Refresh />} onClick={fetchReportData}>
+          <Button variant="outlined" size="small" startIcon={<Refresh />} onClick={fetchReportData}>
             {langPackLabel("txtRefresh") || "Refresh"}
           </Button>
           <Button
             variant="contained"
+            size="small"
             startIcon={<Download />}
             onClick={handleExportCSV}
             disabled={requests.length === 0}
@@ -317,20 +320,16 @@ const AdminReports: React.FC = () => {
           <Typography variant="subtitle2">{langPackLabel("txtFilters") || "Filters"}</Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-          <TextField
+          <LocalizedDatePicker
             label={langPackLabel("txtStartDate") || "Start Date"}
-            type="date"
             value={startDate}
-            onChange={(e) => { setStartDate(e.target.value); setPage(0); }}
-            slotProps={{ inputLabel: { shrink: true } }}
+            onChange={(v) => { setStartDate(v); setPage(0); }}
             size="small"
           />
-          <TextField
+          <LocalizedDatePicker
             label={langPackLabel("txtEndDate") || "End Date"}
-            type="date"
             value={endDate}
-            onChange={(e) => { setEndDate(e.target.value); setPage(0); }}
-            slotProps={{ inputLabel: { shrink: true } }}
+            onChange={(v) => { setEndDate(v); setPage(0); }}
             size="small"
           />
           <FormControl size="small" sx={{ minWidth: 160 }}>
@@ -532,7 +531,7 @@ const AdminReports: React.FC = () => {
                       <TableCell>{getDepartmentName(r.user)}</TableCell>
                       <TableCell>
                         <Chip
-                          label={r.leave_type?.name ?? '—'}
+                          label={localizedLeaveTypeName(r.leave_type, language)}
                           size="small"
                           sx={{
                             bgcolor: r.leave_type?.color_code ?? undefined,
@@ -540,12 +539,12 @@ const AdminReports: React.FC = () => {
                           }}
                         />
                       </TableCell>
-                      <TableCell>{new Date(r.start_date).toLocaleDateString()}</TableCell>
-                      <TableCell>{new Date(r.end_date).toLocaleDateString()}</TableCell>
+                      <TableCell>{formatLocalDate(r.start_date, language)}</TableCell>
+                      <TableCell>{formatLocalDate(r.end_date, language)}</TableCell>
                       <TableCell>{r.total_days}</TableCell>
                       <TableCell>
                         <Chip
-                          label={r.status}
+                          label={localizedStatus(r.status, langPackLabel)}
                           size="small"
                           color={statusColor(r.status) as any}
                         />

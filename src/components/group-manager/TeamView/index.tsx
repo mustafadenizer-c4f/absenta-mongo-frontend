@@ -23,9 +23,8 @@ import {
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import TodayIcon from '@mui/icons-material/Today';
-import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
+import { Calendar, View } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay, eachDayOfInterval, parseISO, addMonths, subMonths } from 'date-fns';
-import { enUS } from 'date-fns/locale/en-US';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 import { useAuth } from '../../../hooks/useAuth';
@@ -33,16 +32,8 @@ import { apiClient } from '../../../config/api';
 import { CalendarEvent, LeaveRequest, User } from '../../../types';
 import ThreeMonthView from '../../common/ThreeMonthView';
 import { useLanguage } from '../../../contexts/LanguageContext';
-
-const locales = { 'en-US': enUS };
-
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: (date: Date) => startOfWeek(date, { weekStartsOn: 1 }),
-  getDay,
-  locales,
-});
+import { localizedLeaveTypeName, localizedStatus } from '../../../utils/localize';
+import { calendarLocalizer, getCalendarCulture, getCalendarMessages } from '../../../utils/calendarLocalizer';
 
 const CONFLICT_COLOR = '#FF1744';
 
@@ -81,14 +72,14 @@ function detectConflictDates(requests: LeaveRequest[]): Set<string> {
 }
 
 /** Map leave requests to CalendarEvent objects */
-function mapLeaveToEvents(requests: LeaveRequest[]): CalendarEvent[] {
+function mapLeaveToEvents(requests: LeaveRequest[], language: string): CalendarEvent[] {
   return requests
     .filter((r) => r.status === 'approved' || r.status === 'pending')
     .map((r) => {
       const s = new Date(r.start_date);
       const e = new Date(r.end_date);
       const userName = r.user?.full_name ?? 'Team Member';
-      const leaveTypeName = r.leave_type?.name ?? 'Leave';
+      const leaveTypeName = localizedLeaveTypeName(r.leave_type, language);
       return {
         id: r.id,
         title: `${userName} – ${leaveTypeName}`,
@@ -105,7 +96,9 @@ function mapLeaveToEvents(requests: LeaveRequest[]): CalendarEvent[] {
 }
 
 const GroupManagerTeamView: React.FC = () => {
-  const { langPackLabel } = useLanguage();
+  const { langPackLabel, language } = useLanguage();
+  const calendarCulture = getCalendarCulture(language);
+  const calendarMessages = getCalendarMessages(language);
   const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
@@ -181,7 +174,7 @@ const GroupManagerTeamView: React.FC = () => {
   }, [groupRequests, groupMembers, teamFilteredMembers, selectedTeam, selectedMembers]);
 
   // Build calendar events
-  const events = useMemo(() => mapLeaveToEvents(filteredRequests), [filteredRequests]);
+  const events = useMemo(() => mapLeaveToEvents(filteredRequests, language), [filteredRequests, language]);
 
   // Detect conflict dates
   const conflictDates = useMemo(() => detectConflictDates(filteredRequests), [filteredRequests]);
@@ -241,7 +234,7 @@ const GroupManagerTeamView: React.FC = () => {
   if (!user?.group_id) {
     return (
       <Box>
-        <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600, mb: 3 }}>{langPackLabel("txtGroupTeamView") || "Group Team View"}</Typography>
+        <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600, mb: 3 }}>{langPackLabel("txtGroupTeamView") || "Group Team View"}</Typography>
         <Alert severity="warning">{langPackLabel("txtNoGroupAssigned") || "No group assigned. Please contact an administrator."}</Alert>
       </Box>
     );
@@ -257,7 +250,7 @@ const GroupManagerTeamView: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600, mb: 3 }}>{langPackLabel("txtGroupTeamView") || "Group Team View"}</Typography>
+      <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600, mb: 3 }}>{langPackLabel("txtGroupTeamView") || "Group Team View"}</Typography>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
@@ -366,9 +359,18 @@ const GroupManagerTeamView: React.FC = () => {
       </Box>
 
       {viewMode === 'calendar' ? (
-        <Box sx={{ height: { xs: 400, sm: 500, md: 600 }, '& .rbc-calendar': { fontFamily: 'inherit' } }}>
+        <Box sx={{
+          height: { xs: 400, sm: 500, md: 600 },
+          '& .rbc-calendar': { fontFamily: 'inherit' },
+          '& .rbc-toolbar': { flexWrap: 'wrap', gap: '8px', mb: 1 },
+          '& .rbc-toolbar button': { fontSize: '0.8rem', padding: '4px 10px' },
+          '& .rbc-btn-group': { gap: '2px' },
+          '& .rbc-toolbar-label': { fontSize: '1rem', fontWeight: 600, padding: '4px 0' },
+        }}>
           <Calendar<CalendarEvent>
-            localizer={localizer}
+            localizer={calendarLocalizer}
+            culture={calendarCulture}
+            messages={calendarMessages}
             events={events}
             startAccessor="start"
             endAccessor="end"
@@ -413,7 +415,7 @@ const GroupManagerTeamView: React.FC = () => {
                 }}
               />
               {selectedLeaveRequest.user?.full_name ?? 'Team Member'} –{' '}
-              {selectedLeaveRequest.leave_type?.name ?? 'Leave'}
+              {localizedLeaveTypeName(selectedLeaveRequest.leave_type, language)}
             </DialogTitle>
             <DialogContent dividers>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -421,7 +423,7 @@ const GroupManagerTeamView: React.FC = () => {
                   <Typography variant="caption" color="text.secondary">{langPackLabel("txtStatus") || "Status"}</Typography>
                   <Box>
                     <Chip
-                      label={selectedLeaveRequest.status}
+                      label={localizedStatus(selectedLeaveRequest.status, langPackLabel)}
                       color={statusColorMap[selectedLeaveRequest.status]}
                       size="small"
                     />

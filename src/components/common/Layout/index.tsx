@@ -116,7 +116,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         header: langPackLabel("txtNavDashboard") || "Supervisor",
         items: [
           { text: langPackLabel("txtNavDashboard") || "Dashboard", icon: <Dashboard />, path: "/supervisor/dashboard" },
-          { text: langPackLabel("txtNavCompanies") || "Companies", icon: <Business />, path: "/supervisor/dashboard" },
+          { text: langPackLabel("txtNavCompanies") || "Companies", icon: <Business />, path: "/supervisor/companies" },
+          { text: langPackLabel("txtDefaultLeaveTypes") || "Default Leave Types", icon: <EventNote />, path: "/supervisor/default-leave-types" },
           { text: langPackLabel("txtNavLabelManagement") || "Label Management", icon: <Translate />, path: "/supervisor/labels" },
           { text: langPackLabel("txtNavSystemManual") || "System Manual", icon: <MenuBook />, path: "/supervisor/guide" },
         ],

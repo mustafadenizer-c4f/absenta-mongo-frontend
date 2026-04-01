@@ -56,10 +56,11 @@ const DAY_LABELS: { index: number; label: string }[] = [
 
 type DayStatus = 'working' | 'legal' | 'rest';
 
-const PROFILES: { value: HierarchyProfile; label: string; description: string; icon: React.ReactNode; levels: string }[] = [
+const PROFILES: { value: HierarchyProfile; label: string; descriptionKey: string; description: string; icon: React.ReactNode; levels: string }[] = [
   {
     value: 'flat',
     label: 'Flat',
+    descriptionKey: 'txtProfileFlat',
     description: 'No organizational layers. Users belong directly to the company.',
     icon: <Person sx={{ fontSize: 40 }} />,
     levels: 'Company → Users',
@@ -67,6 +68,7 @@ const PROFILES: { value: HierarchyProfile; label: string; description: string; i
   {
     value: 'teams',
     label: 'Teams',
+    descriptionKey: 'txtProfileTeams',
     description: 'Smallest unit only. Good for simple team-based companies.',
     icon: <Groups sx={{ fontSize: 40 }} />,
     levels: 'Company → Teams → Users',
@@ -74,6 +76,7 @@ const PROFILES: { value: HierarchyProfile; label: string; description: string; i
   {
     value: 'departments',
     label: 'Departments',
+    descriptionKey: 'txtProfileDepartments',
     description: 'Two levels. Departments contain teams.',
     icon: <Business sx={{ fontSize: 40 }} />,
     levels: 'Company → Departments → Teams → Users',
@@ -81,6 +84,7 @@ const PROFILES: { value: HierarchyProfile; label: string; description: string; i
   {
     value: 'groups',
     label: 'Groups',
+    descriptionKey: 'txtProfileGroups',
     description: 'Full hierarchy. Groups contain departments and teams. For large organizations.',
     icon: <GroupWork sx={{ fontSize: 40 }} />,
     levels: 'Company → Groups → Departments → Teams → Users',
@@ -94,36 +98,49 @@ const HIERARCHY_ORDER: Record<HierarchyProfile, number> = {
   groups: 3,
 };
 
-function getChangeInfo(from: HierarchyProfile, to: HierarchyProfile): { title: string; message: string; steps: string[] } {
+function getChangeInfo(from: HierarchyProfile, to: HierarchyProfile, lang: string): { title: string; message: string; steps: string[] } {
   const isUpgrade = HIERARCHY_ORDER[to] > HIERARCHY_ORDER[from];
+  const t = lang === 'tr';
+
+  const profileNames: Record<string, string> = t
+    ? { flat: 'düz', teams: 'takımlar', departments: 'departmanlar', groups: 'gruplar' }
+    : { flat: 'flat', teams: 'teams', departments: 'departments', groups: 'groups' };
 
   if (isUpgrade) {
     const steps: string[] = [];
     if (from === 'flat' && to === 'teams') {
-      steps.push('Create teams and assign users to them.');
+      steps.push(t ? 'Takımlar oluşturun ve kullanıcıları takımlara atayın.' : 'Create teams and assign users to them.');
     } else if (from === 'flat' && to === 'departments') {
-      steps.push('Create departments, then create teams within each department.', 'Assign users to the appropriate teams.');
+      steps.push(t ? 'Departmanlar oluşturun, ardından her departman içinde takımlar oluşturun.' : 'Create departments, then create teams within each department.');
+      steps.push(t ? 'Kullanıcıları uygun takımlara atayın.' : 'Assign users to the appropriate teams.');
     } else if (from === 'flat' && to === 'groups') {
-      steps.push('Create groups, then create departments within each group.', 'Create teams within each department.', 'Assign users to the appropriate teams.');
+      steps.push(t ? 'Gruplar oluşturun, ardından her grup içinde departmanlar oluşturun.' : 'Create groups, then create departments within each group.');
+      steps.push(t ? 'Her departman içinde takımlar oluşturun.' : 'Create teams within each department.');
+      steps.push(t ? 'Kullanıcıları uygun takımlara atayın.' : 'Assign users to the appropriate teams.');
     } else if (from === 'teams' && to === 'departments') {
-      steps.push('Create departments and assign each existing team to a department.');
+      steps.push(t ? 'Departmanlar oluşturun ve mevcut her takımı bir departmana atayın.' : 'Create departments and assign each existing team to a department.');
     } else if (from === 'teams' && to === 'groups') {
-      steps.push('Create groups, then create departments within each group.', 'Assign each existing team to a department.');
+      steps.push(t ? 'Gruplar oluşturun, ardından her grup içinde departmanlar oluşturun.' : 'Create groups, then create departments within each group.');
+      steps.push(t ? 'Mevcut her takımı bir departmana atayın.' : 'Assign each existing team to a department.');
     } else if (from === 'departments' && to === 'groups') {
-      steps.push('Create groups and assign each existing department to a group.');
+      steps.push(t ? 'Gruplar oluşturun ve mevcut her departmanı bir gruba atayın.' : 'Create groups and assign each existing department to a group.');
     }
     return {
-      title: 'Upgrade Organization Hierarchy',
-      message: `You are upgrading from "${from}" to "${to}". New organizational levels will be added. You will need to:`,
+      title: t ? 'Organizasyon Hiyerarşisini Yükselt' : 'Upgrade Organization Hierarchy',
+      message: t
+        ? `"${profileNames[from]}" profilinden "${profileNames[to]}" profiline yükseltiyorsunuz. Yeni organizasyon seviyeleri eklenecek. Yapmanız gerekenler:`
+        : `You are upgrading from "${from}" to "${to}". New organizational levels will be added. You will need to:`,
       steps,
     };
   } else {
     const steps: string[] = [];
-    steps.push('Upper-level assignments will be removed from child sections.');
-    steps.push('Review your organizational structure to ensure everything is correct.');
+    steps.push(t ? 'Üst seviye atamaları alt bölümlerden kaldırılacaktır.' : 'Upper-level assignments will be removed from child sections.');
+    steps.push(t ? 'Organizasyon yapınızı gözden geçirerek her şeyin doğru olduğundan emin olun.' : 'Review your organizational structure to ensure everything is correct.');
     return {
-      title: 'Downgrade Organization Hierarchy',
-      message: `You are downgrading from "${from}" to "${to}". Some organizational levels will no longer be used. Please note:`,
+      title: t ? 'Organizasyon Hiyerarşisini Düşür' : 'Downgrade Organization Hierarchy',
+      message: t
+        ? `"${profileNames[from]}" profilinden "${profileNames[to]}" profiline düşürüyorsunuz. Bazı organizasyon seviyeleri artık kullanılmayacak. Lütfen dikkat:`
+        : `You are downgrading from "${from}" to "${to}". Some organizational levels will no longer be used. Please note:`,
       steps,
     };
   }
@@ -157,7 +174,7 @@ function extractArrays(statusMap: Record<number, DayStatus>): { workdays: number
 }
 
 const Settings: React.FC = () => {
-  const { langPackLabel } = useLanguage();
+  const { langPackLabel, language } = useLanguage();
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
   const { hierarchyProfile } = useSelector((state: RootState) => state.organization);
@@ -288,14 +305,14 @@ const Settings: React.FC = () => {
   };
 
   const changeInfo = confirmDialog.target && hierarchyProfile
-    ? getChangeInfo(hierarchyProfile, confirmDialog.target)
+    ? getChangeInfo(hierarchyProfile, confirmDialog.target, language)
     : null;
 
   const [activeTab, setActiveTab] = useState(0);
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600, mb: 1 }}>{langPackLabel("txtCompanySettings") || "Company Settings"}</Typography>
+      <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600, mb: 1 }}>{langPackLabel("txtCompanySettings") || "Company Settings"}</Typography>
 
       <Tabs value={activeTab} onChange={(_e, v) => setActiveTab(v)} sx={{ mb: 3 }}>
         <Tab label={langPackLabel("txtOrganization") || "Organization"} />
@@ -306,11 +323,11 @@ const Settings: React.FC = () => {
       {/* Tab 0: Organization Hierarchy */}
       {activeTab === 0 && (
         <Box>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             {langPackLabel("txtChooseHierarchy") || "Choose the organizational hierarchy that fits your company structure."}
           </Typography>
 
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
         {PROFILES.map((p) => {
           const isSelected = hierarchyProfile === p.value;
           const isLower = hierarchyProfile ? HIERARCHY_ORDER[p.value] < HIERARCHY_ORDER[hierarchyProfile] : false;
@@ -324,8 +341,9 @@ const Settings: React.FC = () => {
             <Card
               key={p.value}
               sx={{
-                flex: '1 1 220px',
-                minWidth: 220,
+                flex: '1 1 160px',
+                minWidth: 160,
+                maxWidth: 260,
                 border: isSelected ? 2 : 1,
                 borderColor: isSelected ? 'primary.main' : 'divider',
                 position: 'relative',
@@ -335,23 +353,23 @@ const Settings: React.FC = () => {
               <CardActionArea
                 onClick={() => handleSelect(p.value)}
                 disabled={isSelected || isLower}
-                sx={{ p: 2, height: '100%' }}
+                sx={{ p: 1.5, height: '100%' }}
               >
-                <CardContent sx={{ textAlign: 'center' }}>
-                  <Box sx={{ color: isSelected ? 'primary.main' : 'text.secondary', mb: 1 }}>
+                <CardContent sx={{ textAlign: 'center', p: '8px !important' }}>
+                  <Box sx={{ color: isSelected ? 'primary.main' : 'text.secondary', mb: 0.5 }}>
                     {p.icon}
                   </Box>
-                  <Typography variant="h6" sx={{ mb: 1 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                     {profileLabelMap[p.value] || p.label}
                     {isSelected && (
                       <Chip label={langPackLabel("txtActive") || "Active"} color="primary" size="small" sx={{ ml: 1 }} />
                     )}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {p.description}
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                    {langPackLabel(p.descriptionKey) || p.description}
                   </Typography>
-                  <Paper variant="outlined" sx={{ p: 1, bgcolor: 'grey.50' }}>
-                    <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
+                  <Paper variant="outlined" sx={{ p: 0.5, bgcolor: 'grey.50' }}>
+                    <Typography variant="caption" sx={{ fontFamily: 'monospace', fontSize: '0.7rem' }}>
                       {p.levels}
                     </Typography>
                   </Paper>
@@ -373,7 +391,7 @@ const Settings: React.FC = () => {
       <Box>
         <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600, mb: 1 }}>{langPackLabel("txtWorkdayConfiguration") || "Workday Configuration"}</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Working = employees work. Legal workday = not working but deducted from leave. Rest day = never deducted.
+          {langPackLabel("txtWorkdayExplanation") || "Working = employees work. Legal workday = not working but deducted from leave. Rest day = never deducted."}
         </Typography>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
@@ -396,7 +414,7 @@ const Settings: React.FC = () => {
 
         {noDaysSelected && (
           <Typography variant="body2" color="error" sx={{ mb: 2 }}>
-            At least one working or legal workday is required
+            {langPackLabel("txtAtLeastOneWorkday") || "At least one working or legal workday is required"}
           </Typography>
         )}
 
@@ -554,7 +572,7 @@ const Settings: React.FC = () => {
                 ))}
               </Box>
               <Alert severity="warning" sx={{ mt: 2 }}>
-                This action will change your company's organizational structure. Make sure to update affected sections afterward.
+                {langPackLabel("txtHierarchyChangeWarning") || "This action will change your company's organizational structure. Make sure to update affected sections afterward."}
               </Alert>
             </DialogContent>
             <DialogActions>

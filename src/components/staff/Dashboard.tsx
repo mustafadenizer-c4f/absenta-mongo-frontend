@@ -38,6 +38,7 @@ import {
 } from '../../store/slices/leaveSlice';
 import { EnhancedLeaveBalanceSummary, LeaveRequest, Holiday } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { localizedLeaveTypeName, localizedBalanceName, localizedStatus, formatLocalDate } from '../../utils/localize';
 
 const statusColorMap: Record<LeaveRequest['status'], 'warning' | 'success' | 'error' | 'default'> = {
   pending: 'warning',
@@ -53,7 +54,7 @@ const tierLabelMap: Record<string, string> = {
 };
 
 const StaffDashboard: React.FC = () => {
-  const { langPackLabel } = useLanguage();
+  const { langPackLabel, language } = useLanguage();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
@@ -88,12 +89,13 @@ const StaffDashboard: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600 }}>
           {langPackLabel("txtDashboard") || "My Dashboard"}
         </Typography>
         <Button
           variant="contained"
+          size="small"
           startIcon={<Add />}
           onClick={() => navigate('/staff/request')}
         >{langPackLabel("txtRequestLeave") || "Request Leave"}</Button>
@@ -124,15 +126,15 @@ const StaffDashboard: React.FC = () => {
       )}
 
       {/* Leave Balance Cards */}
-      <Typography variant="h6" sx={{ mb: 0.5, fontWeight: 600 }}>
+      <Typography variant="subtitle1" sx={{ mb: 0.5, fontWeight: 600 }}>
         {langPackLabel("txtMyLeaveBalances") || "Leave Balances"}
       </Typography>
       {balances.length > 0 && balances[0].period_start && (
-        <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-          {langPackLabel("txtPeriod") || "Period"}: {new Date(balances[0].period_start).toLocaleDateString()} — {new Date(balances[0].period_end).toLocaleDateString()}
+        <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
+          {langPackLabel("txtPeriod") || "Period"}: {formatLocalDate(balances[0].period_start, language)} — {formatLocalDate(balances[0].period_end, language)}
         </Typography>
       )}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
         {balances.filter((b: EnhancedLeaveBalanceSummary) => {
           const name = b.leave_type_name.toLowerCase();
           return name.includes('annual') || name.includes('casual') || name.includes('sick') || b.used > 0;
@@ -140,16 +142,16 @@ const StaffDashboard: React.FC = () => {
           <Card
             key={balance.leave_type_id}
             sx={{
-              flex: '1 1 220px',
-              minWidth: '220px',
-              borderTop: 4,
+              flex: '1 1 160px',
+              minWidth: 160,
+              borderTop: 3,
               borderColor: balance.color_code,
             }}
           >
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                  {balance.leave_type_name}
+            <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {localizedBalanceName(balance, language)}
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
                   {balance.is_age_eligible && (
@@ -160,15 +162,16 @@ const StaffDashboard: React.FC = () => {
                 </Box>
               </Box>
               <Typography
-                variant="h4"
-                sx={{ color: balance.remaining < 0 ? 'error.main' : balance.color_code, mb: 1 }}
+                variant="h5"
+                sx={{ color: balance.remaining < 0 ? 'error.main' : balance.color_code }}
+                fontWeight={700}
               >
                 {balance.remaining}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="caption" color="text.secondary">
                 {langPackLabel("txtRemaining") || "remaining"}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+              <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
                 <Typography variant="caption" color="text.secondary">
                   {langPackLabel("txtAllocated") || "Allocated"}: {balance.allocated}
                 </Typography>
@@ -180,7 +183,7 @@ const StaffDashboard: React.FC = () => {
                 </Typography>
               </Box>
               {/* Enhanced balance details */}
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 1 }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 0.5 }}>
                 {balance.base_entitlement != null && (
                   <Typography variant="caption" color="text.secondary">
                     {langPackLabel("txtBase") || "Base"}: {balance.base_entitlement}
@@ -209,10 +212,10 @@ const StaffDashboard: React.FC = () => {
       </Box>
 
       {/* Recent Leave Requests */}
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <EventNote color="primary" /> {langPackLabel("txtRecentRequests") || "Recent Requests"}
+      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+        <EventNote color="primary" sx={{ fontSize: 20 }} /> {langPackLabel("txtRecentRequests") || "Recent Requests"}
       </Typography>
-      <Paper sx={{ mb: 4 }}>
+      <Paper sx={{ mb: 3 }}>
         {recentRequests.length > 0 ? (
           <TableContainer>
             <Table size="small">
@@ -227,15 +230,15 @@ const StaffDashboard: React.FC = () => {
               <TableBody>
                 {recentRequests.map((req: LeaveRequest) => (
                   <TableRow key={req.id} hover>
-                    <TableCell>{req.leave_type?.name ?? 'N/A'}</TableCell>
+                    <TableCell>{localizedLeaveTypeName(req.leave_type, language)}</TableCell>
                     <TableCell>
-                      {new Date(req.start_date).toLocaleDateString()} –{' '}
-                      {new Date(req.end_date).toLocaleDateString()}
+                      {formatLocalDate(req.start_date, language)} –{' '}
+                      {formatLocalDate(req.end_date, language)}
                     </TableCell>
                     <TableCell>{req.total_days}</TableCell>
                     <TableCell>
                       <Chip
-                        label={req.status}
+                        label={localizedStatus(req.status, langPackLabel)}
                         color={statusColorMap[req.status]}
                         size="small"
                       />
@@ -255,10 +258,10 @@ const StaffDashboard: React.FC = () => {
       </Paper>
 
       {/* Upcoming Holidays */}
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <CalendarMonth color="primary" /> {langPackLabel("txtUpcomingHolidays") || "Upcoming Holidays"}
+      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+        <CalendarMonth color="primary" sx={{ fontSize: 20 }} /> {langPackLabel("txtUpcomingHolidays") || "Upcoming Holidays"}
       </Typography>
-      <Paper sx={{ mb: 4 }}>
+      <Paper sx={{ mb: 3 }}>
         {upcomingHolidays.length > 0 ? (
           <List disablePadding>
             {upcomingHolidays.map((holiday: Holiday) => (

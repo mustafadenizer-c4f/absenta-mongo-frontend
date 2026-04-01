@@ -34,6 +34,8 @@ import { LeaveService, LeaveRequestFilters } from '../../../services/leave';
 import { apiClient } from '../../../config/api';
 import { LeaveRequest, LeaveType } from '../../../types';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { localizedLeaveTypeName, localizedStatus, formatLocalDate } from '../../../utils/localize';
+import LocalizedDatePicker from '../../common/LocalizedDatePicker';
 
 const statusColorMap: Record<LeaveRequest['status'], 'warning' | 'success' | 'error' | 'default'> = {
   pending: 'warning',
@@ -48,7 +50,7 @@ type SortDirection = 'asc' | 'desc';
 const MANAGER_ROLES = ['manager', 'group_manager', 'department_manager'];
 
 const LeaveHistory: React.FC = () => {
-  const { langPackLabel } = useLanguage();
+  const { langPackLabel, language } = useLanguage();
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
   const isManager = user ? MANAGER_ROLES.includes(user.role) : false;
@@ -274,7 +276,7 @@ const LeaveHistory: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
+      <Typography variant="h5" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
         {isTeamView && userFilter !== user?.id ? (langPackLabel("txtTeamLeaveHistory") || 'Team Leave History') : (langPackLabel("txtLeaveHistory") || 'Leave History')}
       </Typography>
 
@@ -284,7 +286,7 @@ const LeaveHistory: React.FC = () => {
           <FilterListIcon color="action" />
           <Typography variant="subtitle1" fontWeight={600}>{langPackLabel("txtFilters") || "Filters"}</Typography>
         </Box>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
           {isManager && teams.length > 0 && (
             <TextField
               select
@@ -292,7 +294,7 @@ const LeaveHistory: React.FC = () => {
               value={teamFilter}
               onChange={(e) => { setTeamFilter(e.target.value); setUserFilter(''); setPage(0); }}
               size="small"
-              sx={{ minWidth: 180 }}
+              sx={{ minWidth: 130 }}
             >
               <MenuItem value="">{langPackLabel("txtAllTeams") || "All Teams"}</MenuItem>
               {teams.map((t) => (
@@ -307,7 +309,7 @@ const LeaveHistory: React.FC = () => {
               value={userFilter}
               onChange={(e) => { setUserFilter(e.target.value); setPage(0); }}
               size="small"
-              sx={{ minWidth: 200 }}
+              sx={{ minWidth: 140 }}
             >
               <MenuItem value="">{langPackLabel("txtAllMeTeam") || "All (Me + Team)"}</MenuItem>
               <MenuItem value={user!.id}>{langPackLabel("txtMe") || "Me"} ({user!.full_name})</MenuItem>
@@ -320,7 +322,7 @@ const LeaveHistory: React.FC = () => {
           <TextField
             select label={langPackLabel("txtStatus") || "Status"} value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
-            size="small" sx={{ minWidth: 150 }}
+            size="small" sx={{ minWidth: 110 }}
           >
             <MenuItem value="">{langPackLabel("txtAll") || "All"}</MenuItem>
             <MenuItem value="pending">{langPackLabel("txtPending") || "Pending"}</MenuItem>
@@ -331,19 +333,19 @@ const LeaveHistory: React.FC = () => {
           <TextField
             select label={langPackLabel("txtLeaveType") || "Leave Type"} value={leaveTypeFilter}
             onChange={(e) => { setLeaveTypeFilter(e.target.value); setPage(0); }}
-            size="small" sx={{ minWidth: 180 }}
+            size="small" sx={{ minWidth: 130 }}
           >
             <MenuItem value="">{langPackLabel("txtAll") || "All"}</MenuItem>
             {leaveTypes.map((lt) => (<MenuItem key={lt.id} value={lt.id}>{lt.name}</MenuItem>))}
           </TextField>
-          <TextField label={langPackLabel("txtFromDate") || "From Date"} type="date" value={startDateFilter}
-            onChange={(e) => { setStartDateFilter(e.target.value); setPage(0); }}
-            size="small" slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 160 }} />
-          <TextField label={langPackLabel("txtToDate") || "To Date"} type="date" value={endDateFilter}
-            onChange={(e) => { setEndDateFilter(e.target.value); setPage(0); }}
-            size="small" slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 160 }} />
+          <LocalizedDatePicker label={langPackLabel("txtFromDate") || "From"} value={startDateFilter}
+            onChange={(v) => { setStartDateFilter(v); setPage(0); }}
+            size="small" sx={{ minWidth: 130 }} />
+          <LocalizedDatePicker label={langPackLabel("txtToDate") || "To"} value={endDateFilter}
+            onChange={(v) => { setEndDateFilter(v); setPage(0); }}
+            size="small" sx={{ minWidth: 130 }} />
           {hasActiveFilters && (
-            <Button variant="outlined" size="small" onClick={handleClearFilters}>{langPackLabel("txtClearFilters") || "Clear Filters"}</Button>
+            <Button variant="outlined" size="small" onClick={handleClearFilters}>{langPackLabel("txtClearFilters") || "Clear"}</Button>
           )}
         </Box>
       </Paper>
@@ -373,6 +375,7 @@ const LeaveHistory: React.FC = () => {
                     <TableCell>{langPackLabel("txtReason") || "Reason"}</TableCell>
                     <TableCell>{langPackLabel("txtRequested") || "Requested"}</TableCell>
                     <TableCell>{langPackLabel("txtApproved") || "Approved"}</TableCell>
+                    <TableCell>{langPackLabel("txtApprovedBy") || "Approved By"}</TableCell>
                     <TableCell>
                       <TableSortLabel active={sortField === 'status'} direction={sortField === 'status' ? sortDirection : 'asc'} onClick={() => handleSortChange('status')}>{langPackLabel("txtStatus") || "Status"}</TableSortLabel>
                     </TableCell>
@@ -388,10 +391,10 @@ const LeaveHistory: React.FC = () => {
                         </TableCell>
                       )}
                       <TableCell>
-                        {new Date(req.start_date).toLocaleDateString()} –{' '}
-                        {new Date(req.end_date).toLocaleDateString()}
+                        {formatLocalDate(req.start_date, language)} –{' '}
+                        {formatLocalDate(req.end_date, language)}
                       </TableCell>
-                      <TableCell>{req.leave_type?.name ?? 'N/A'}</TableCell>
+                      <TableCell>{localizedLeaveTypeName(req.leave_type, language)}</TableCell>
                       <TableCell>{req.total_days}</TableCell>
                       <TableCell>
                         <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 200, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -399,23 +402,31 @@ const LeaveHistory: React.FC = () => {
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Typography variant="caption" color="text.secondary">{new Date(req.created_at).toLocaleDateString()}</Typography>
+                        <Typography variant="caption" color="text.secondary">{formatLocalDate(req.created_at, language)}</Typography>
                       </TableCell>
                       <TableCell>
-                        <Typography variant="caption" color="text.secondary">{req.approved_at ? new Date(req.approved_at).toLocaleDateString() : '—'}</Typography>
+                        <Typography variant="caption" color="text.secondary">{formatLocalDate(req.approved_at, language)}</Typography>
                       </TableCell>
-                      <TableCell><Chip label={req.status} color={statusColorMap[req.status]} size="small" /></TableCell>
                       <TableCell>
-                        {(req.status === 'pending' || req.status === 'approved') && req.user_id === user?.id && req.reason !== 'Collective leave' && (
-                          <Box sx={{ display: 'flex', gap: 0.5 }}>
-                            <IconButton size="small" color="primary" onClick={() => handleEditClick(req)} title={langPackLabel("txtEditDates") || "Edit dates"}>
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton size="small" color="error" onClick={() => handleDeleteClick(req)} title={langPackLabel("txtDeleteRequest") || "Delete request"}>
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Box>
-                        )}
+                        <Typography variant="caption" color="text.secondary">{(req as any).approved_by_user?.full_name || '—'}</Typography>
+                      </TableCell>
+                      <TableCell><Chip label={localizedStatus(req.status, langPackLabel)} color={statusColorMap[req.status]} size="small" /></TableCell>
+                      <TableCell>
+                        {(() => {
+                          const isPending = req.status === 'pending';
+                          const isApprovedFuture = req.status === 'approved' && new Date(req.end_date) >= new Date(new Date().toISOString().split('T')[0] + 'T00:00:00');
+                          const canModify = (isPending || isApprovedFuture) && req.user_id === user?.id && req.reason !== 'Collective leave';
+                          return canModify ? (
+                            <Box sx={{ display: 'flex', gap: 0.5 }}>
+                              <IconButton size="small" color="primary" onClick={() => handleEditClick(req)} title={langPackLabel("txtEditDates") || "Edit dates"}>
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton size="small" color="error" onClick={() => handleDeleteClick(req)} title={langPackLabel("txtDeleteRequest") || "Delete request"}>
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          ) : null;
+                        })()}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -435,7 +446,7 @@ const LeaveHistory: React.FC = () => {
           <DialogContentText>
             {langPackLabel("txtCancelLeaveConfirm") || "Are you sure you want to cancel this leave request"}
             {cancelTarget && (<>
-              {' '}{langPackLabel("txtFor") || "for"} <strong>{new Date(cancelTarget.start_date).toLocaleDateString()} – {new Date(cancelTarget.end_date).toLocaleDateString()}</strong>
+              {' '}{langPackLabel("txtFor") || "for"} <strong>{formatLocalDate(cancelTarget.start_date, language)} – {formatLocalDate(cancelTarget.end_date, language)}</strong>
               {' '}({cancelTarget.total_days} {cancelTarget.total_days !== 1 ? (langPackLabel("txtDays") || 'days') : (langPackLabel("txtDay") || 'day')})
             </>)}? {langPackLabel("txtCannotBeUndone") || "This action cannot be undone."}
           </DialogContentText>
@@ -456,12 +467,14 @@ const LeaveHistory: React.FC = () => {
           <DialogContentText sx={{ mb: 2 }}>
             {langPackLabel("txtUpdateDatesBelow") || "Update the dates below. The request will be reset to pending for re-approval."}
           </DialogContentText>
-          <TextField label={langPackLabel("txtStartDate") || "Start Date"} type="date" fullWidth value={editStartDate}
-            onChange={(e) => setEditStartDate(e.target.value)}
-            slotProps={{ inputLabel: { shrink: true } }} sx={{ mb: 2, mt: 1 }} />
-          <TextField label={langPackLabel("txtEndDate") || "End Date"} type="date" fullWidth value={editEndDate}
-            onChange={(e) => setEditEndDate(e.target.value)}
-            slotProps={{ inputLabel: { shrink: true } }} sx={{ mb: 2 }} />
+          <Box sx={{ mt: 1, mb: 2 }}>
+            <LocalizedDatePicker label={langPackLabel("txtStartDate") || "Start Date"} value={editStartDate}
+              onChange={setEditStartDate} fullWidth />
+          </Box>
+          <Box sx={{ mb: 2 }}>
+            <LocalizedDatePicker label={langPackLabel("txtEndDate") || "End Date"} value={editEndDate}
+              onChange={setEditEndDate} fullWidth />
+          </Box>
           <TextField label={langPackLabel("txtReasonOptional") || "Reason (Optional)"} multiline rows={2} fullWidth value={editReason}
             onChange={(e) => setEditReason(e.target.value)} />
         </DialogContent>
@@ -481,7 +494,7 @@ const LeaveHistory: React.FC = () => {
           <DialogContentText>
             {langPackLabel("txtDeleteLeaveConfirm") || "Are you sure you want to permanently delete this leave request"}
             {deleteTarget && (<>
-              {' '}{langPackLabel("txtFor") || "for"} <strong>{new Date(deleteTarget.start_date).toLocaleDateString()} – {new Date(deleteTarget.end_date).toLocaleDateString()}</strong>
+              {' '}{langPackLabel("txtFor") || "for"} <strong>{formatLocalDate(deleteTarget.start_date, language)} – {formatLocalDate(deleteTarget.end_date, language)}</strong>
               {' '}({deleteTarget.total_days} {deleteTarget.total_days !== 1 ? (langPackLabel("txtDays") || 'days') : (langPackLabel("txtDay") || 'day')})
             </>)}? {langPackLabel("txtCannotBeUndone") || "This action cannot be undone."}
           </DialogContentText>

@@ -136,15 +136,15 @@ const Companies: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600 }}>
           {langPackLabel("txtCompaniesManagement") || "Companies Management"}
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button variant="outlined" startIcon={<Refresh />} onClick={handleRefresh}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button variant="outlined" size="small" startIcon={<Refresh />} onClick={handleRefresh}>
             {langPackLabel("txtRefresh") || "Refresh"}
           </Button>
-          <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenDialog()}>
+          <Button variant="contained" size="small" startIcon={<Add />} onClick={() => handleOpenDialog()}>
             {langPackLabel("txtAddCompany") || "Add Company"}
           </Button>
         </Box>

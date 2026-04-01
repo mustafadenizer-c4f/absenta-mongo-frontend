@@ -1,384 +1,130 @@
-// src/components/supervisor/Dashboard.tsx
+// src/components/supervisor/Dashboard.tsx — Supervisor Overview / Profile
 import React, { useState, useEffect } from 'react';
-import { useAutoClearing } from '../../hooks/useAutoClearing';
+import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { RootState } from '../../store';
 import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
-  IconButton,
-  CircularProgress,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Switch,
-  Snackbar,
-  Tooltip,
+  Box, Typography, Card, CardContent, CardActionArea, CircularProgress, Chip, Avatar,
 } from '@mui/material';
 import {
-  LockReset,
-  Business,
-  Add,
-  Refresh,
+  Business, Translate, MenuBook, EventNote, Person, ArrowForward,
 } from '@mui/icons-material';
 import { SupervisorService } from '../../services/supervisor';
-import { CompanyWithAdmin, HierarchyProfile } from '../../types';
+import { LanguageService } from '../../services/language';
+import { CompanyWithAdmin } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-const HIERARCHY_OPTIONS: { value: HierarchyProfile; label: string }[] = [
-  { value: 'flat', label: 'Flat' },
-  { value: 'teams', label: 'Teams' },
-  { value: 'departments', label: 'Departments' },
-  { value: 'groups', label: 'Groups' },
-];
+import { formatLocalDate } from '../../utils/localize';
 
 const SupervisorDashboard: React.FC = () => {
-  const { langPackLabel } = useLanguage();
+  const { langPackLabel, language } = useLanguage();
+  const navigate = useNavigate();
+  const { user } = useSelector((state: RootState) => state.auth);
   const [companies, setCompanies] = useState<CompanyWithAdmin[]>([]);
+  const [labelCount, setLabelCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useAutoClearing(7000);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  // Create Company dialog state
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [formName, setFormName] = useState('');
-  const [formHierarchyProfile, setFormHierarchyProfile] = useState<HierarchyProfile>('flat');
-  const [formPhone, setFormPhone] = useState('');
-  const [formContactEmail, setFormContactEmail] = useState('');
-  const [formContractNumber, setFormContractNumber] = useState('');
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [creating, setCreating] = useState(false);
-
-  // Reset password dialog state
-  const [resetDialogOpen, setResetDialogOpen] = useState(false);
-  const [resetTargetUser, setResetTargetUser] = useState<{ id: string; email: string } | null>(null);
-  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
-    fetchCompanies();
+    const load = async () => {
+      try {
+        const [comps, labels] = await Promise.all([
+          SupervisorService.getCompaniesWithAdmins(),
+          LanguageService.getAllLabels(),
+        ]);
+        setCompanies(comps);
+        setLabelCount(labels.length);
+      } catch {}
+      finally { setLoading(false); }
+    };
+    load();
   }, []);
 
-  const fetchCompanies = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await SupervisorService.getCompaniesWithAdmins();
-      setCompanies(data);
-    } catch (err: any) {
-      setError(err.message || langPackLabel("txtFailedToLoadCompanies") || 'Failed to load companies');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const activeCount = companies.filter((c) => c.status).length;
+  const inactiveCount = companies.filter((c) => !c.status).length;
 
-  const handleStatusToggle = async (companyId: string, currentStatus: boolean) => {
-    try {
-      await SupervisorService.updateCompanyStatus(companyId, !currentStatus);
-      setSuccessMessage(`Company status updated successfully`);
-      await fetchCompanies();
-    } catch (err: any) {
-      setError(err.message || langPackLabel("txtFailedToUpdateStatus") || 'Failed to update company status');
-    }
-  };
-
-  const handleOpenResetDialog = (userId: string, email: string) => {
-    setResetTargetUser({ id: userId, email });
-    setResetDialogOpen(true);
-  };
-
-  const handleResetPassword = async () => {
-    if (!resetTargetUser) return;
-    try {
-      setResetting(true);
-      await SupervisorService.resetAdminPassword(resetTargetUser.id);
-      setSuccessMessage(`Password reset successfully for ${resetTargetUser.email}`);
-      setResetDialogOpen(false);
-      setResetTargetUser(null);
-    } catch (err: any) {
-      setError(err.message || langPackLabel("txtSomethingWentWrong") || 'Failed to reset password');
-      setResetDialogOpen(false);
-    } finally {
-      setResetting(false);
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {};
-    if (!formName.trim()) errors.name = 'Company name is required';
-    if (!formPhone.trim()) errors.phone = 'Phone is required';
-    if (!formContactEmail.trim()) {
-      errors.contact_email = 'Contact email is required';
-    } else if (!EMAIL_REGEX.test(formContactEmail)) {
-      errors.contact_email = 'Invalid email format';
-    }
-    if (!formContractNumber.trim()) errors.contract_number = 'Contract number is required';
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const resetForm = () => {
-    setFormName('');
-    setFormHierarchyProfile('flat');
-    setFormPhone('');
-    setFormContactEmail('');
-    setFormContractNumber('');
-    setFormErrors({});
-  };
-
-  const handleCreateCompany = async () => {
-    if (!validateForm()) return;
-    try {
-      setCreating(true);
-      await SupervisorService.createCompanyWithAdmin({
-        name: formName.trim(),
-        hierarchy_profile: formHierarchyProfile,
-        phone: formPhone.trim(),
-        contact_email: formContactEmail.trim(),
-        contract_number: formContractNumber.trim(),
-      });
-      setSuccessMessage('Company created successfully');
-      setCreateDialogOpen(false);
-      resetForm();
-      await fetchCompanies();
-    } catch (err: any) {
-      setError(err.message || langPackLabel("txtSomethingWentWrong") || 'Failed to create company');
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
-  }
+  if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px"><CircularProgress /></Box>;
 
   return (
     <Box>
-      {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600 }}>
-          {langPackLabel("txtDashboard") || "Supervisor Dashboard"}
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button variant="outlined" startIcon={<Refresh />} onClick={fetchCompanies}>{langPackLabel("txtRefresh") || "Refresh"}</Button>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => setCreateDialogOpen(true)}
-          >
-            {langPackLabel("txtCreateNewCompany") || "Create Company"}
-          </Button>
-        </Box>
+      {/* Profile Header */}
+      <Card sx={{ mb: 4, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+        <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 3, py: 3 }}>
+          <Avatar sx={{ width: 64, height: 64, bgcolor: 'rgba(255,255,255,0.2)', fontSize: 28 }}>
+            {user?.full_name?.charAt(0).toUpperCase() || 'S'}
+          </Avatar>
+          <Box>
+            <Typography variant="h5" fontWeight={700}>{user?.full_name || 'Supervisor'}</Typography>
+            <Typography variant="body2" sx={{ opacity: 0.85 }}>{user?.email}</Typography>
+            <Chip label="Supervisor" size="small" sx={{ mt: 0.5, bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }} />
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* Stat Cards */}
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 4 }}>
+        {[
+          { label: langPackLabel("txtCompanies") || 'Companies', value: companies.length, color: '#667eea', icon: <Business /> },
+          { label: langPackLabel("txtActive") || 'Active', value: activeCount, color: '#34D399', icon: <Business /> },
+          { label: langPackLabel("txtInactive") || 'Inactive', value: inactiveCount, color: '#FB7185', icon: <Business /> },
+          { label: langPackLabel("txtLabelManagement") || 'Labels', value: labelCount, color: '#F59E0B', icon: <Translate /> },
+        ].map((s, i) => (
+          <Card key={i} sx={{ flex: '1 1 160px', minWidth: 140 }}>
+            <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 2, '&:last-child': { pb: 2 } }}>
+              <Avatar sx={{ bgcolor: s.color + '20', color: s.color, width: 44, height: 44 }}>{s.icon}</Avatar>
+              <Box>
+                <Typography variant="h4" fontWeight={700} sx={{ color: s.color }}>{s.value}</Typography>
+                <Typography variant="caption" color="text.secondary">{s.label}</Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        ))}
       </Box>
 
-      {/* Error alert (persistent) */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
+      {/* Quick Navigation */}
+      <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>{langPackLabel("txtQuickActions") || "Quick Actions"}</Typography>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 4 }}>
+        {[
+          { label: langPackLabel("txtCompanies") || 'Manage Companies', icon: <Business />, path: '/supervisor/companies', desc: `${companies.length} companies` },
+          { label: langPackLabel("txtDefaultLeaveTypes") || 'Default Leave Types', icon: <EventNote />, path: '/supervisor/default-leave-types', desc: 'Configure defaults for new companies' },
+          { label: langPackLabel("txtLabelManagement") || 'Label Management', icon: <Translate />, path: '/supervisor/labels', desc: `${labelCount} labels` },
+          { label: langPackLabel("txtAppManual") || 'System Guide', icon: <MenuBook />, path: '/supervisor/guide', desc: 'Documentation & help' },
+        ].map((item, i) => (
+          <Card key={i} sx={{ flex: '1 1 240px', minWidth: 220 }}>
+            <CardActionArea onClick={() => navigate(item.path)} sx={{ p: 2 }}>
+              <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 0 }}>
+                <Avatar sx={{ bgcolor: 'primary.light', color: 'primary.main' }}>{item.icon}</Avatar>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="subtitle1" fontWeight={600}>{item.label}</Typography>
+                  <Typography variant="caption" color="text.secondary">{item.desc}</Typography>
+                </Box>
+                <ArrowForward color="action" fontSize="small" />
+              </CardContent>
+            </CardActionArea>
+          </Card>
+        ))}
+      </Box>
 
-      {/* Companies Table */}
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Business color="primary" />
-          Companies ({companies.length})
-        </Typography>
-
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell><strong>{langPackLabel("txtCompanyName") || "Company Name"}</strong></TableCell>
-                <TableCell><strong>{langPackLabel("txtContactEmail") || "Contact Email"}</strong></TableCell>
-                <TableCell><strong>{langPackLabel("txtContractNumber") || "Contract Number"}</strong></TableCell>
-                <TableCell><strong>{langPackLabel("txtPhone") || "Phone"}</strong></TableCell>
-                <TableCell><strong>{langPackLabel("txtHierarchy") || "Hierarchy"}</strong></TableCell>
-                <TableCell><strong>{langPackLabel("txtStatus") || "Status"}</strong></TableCell>
-                <TableCell><strong>{langPackLabel("txtAdminEmail") || "Admin Email"}</strong></TableCell>
-                <TableCell><strong>{langPackLabel("txtActions") || "Actions"}</strong></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {companies.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} align="center">
-                    <Typography color="textSecondary" sx={{ py: 4 }}>
-                      {langPackLabel("txtNoCompaniesFound") || "No companies found. Create one to get started."}
+      {/* Recent Companies */}
+      <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>{langPackLabel("txtCompanies") || "Recent Companies"}</Typography>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+        {companies.slice(0, 6).map((c) => (
+          <Card key={c.id} sx={{ flex: '1 1 280px', minWidth: 260, cursor: 'pointer', '&:hover': { boxShadow: 4 } }} onClick={() => navigate('/supervisor/companies')}>
+            <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box>
+                  <Typography variant="subtitle2" fontWeight={600}>{c.name}</Typography>
+                  <Typography variant="caption" color="text.secondary">{c.admin_user?.email || '—'}</Typography>
+                  {c.admin_user?.last_login && (
+                    <Typography variant="caption" display="block" color="text.secondary">
+                      {langPackLabel("txtLastLogin") || "Last login"}: {formatLocalDate(c.admin_user.last_login, language)}
                     </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                companies.map((company) => (
-                  <TableRow key={company.id} hover>
-                    <TableCell>{company.name}</TableCell>
-                    <TableCell>{company.contact_email || '—'}</TableCell>
-                    <TableCell>{company.contract_number || '—'}</TableCell>
-                    <TableCell>{company.phone || '—'}</TableCell>
-                    <TableCell>
-                      <Chip label={company.hierarchy_profile} size="small" variant="outlined" />
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={company.status ? 'Active' : 'Disabled'}
-                        color={company.status ? 'success' : 'error'}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>{company.admin_user?.email || '—'}</TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Tooltip title={company.status ? 'Disable company' : 'Enable company'}>
-                          <Switch
-                            checked={company.status}
-                            onChange={() => handleStatusToggle(company.id, company.status)}
-                            size="small"
-                            color="success"
-                          />
-                        </Tooltip>
-                        {company.admin_user && (
-                          <Tooltip title={`Reset password for ${company.admin_user.email}`}>
-                            <IconButton
-                              size="small"
-                              color="warning"
-                              onClick={() =>
-                                handleOpenResetDialog(company.admin_user!.id, company.admin_user!.email)
-                              }
-                            >
-                              <LockReset />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
-
-      {/* Create Company Dialog */}
-      <Dialog
-        open={createDialogOpen}
-        onClose={() => { setCreateDialogOpen(false); resetForm(); }}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>{langPackLabel("txtCreateNewCompany") || "Create New Company"}</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-            <TextField
-              label={langPackLabel("txtCompanyName") || "Company Name"}
-              value={formName}
-              onChange={(e) => setFormName(e.target.value)}
-              error={!!formErrors.name}
-              helperText={formErrors.name}
-              required
-              fullWidth
-            />
-            <FormControl fullWidth>
-              <InputLabel>{langPackLabel("txtHierarchyProfile") || "Hierarchy Profile"}</InputLabel>
-              <Select
-                value={formHierarchyProfile}
-                label={langPackLabel("txtHierarchyProfile") || "Hierarchy Profile"}
-                onChange={(e) => setFormHierarchyProfile(e.target.value as HierarchyProfile)}
-              >
-                {HIERARCHY_OPTIONS.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <TextField
-              label={langPackLabel("txtPhone") || "Phone"}
-              value={formPhone}
-              onChange={(e) => setFormPhone(e.target.value)}
-              error={!!formErrors.phone}
-              helperText={formErrors.phone}
-              required
-              fullWidth
-            />
-            <TextField
-              label={langPackLabel("txtContactEmail") || "Contact Email"}
-              type="email"
-              value={formContactEmail}
-              onChange={(e) => setFormContactEmail(e.target.value)}
-              error={!!formErrors.contact_email}
-              helperText={formErrors.contact_email}
-              required
-              fullWidth
-            />
-            <TextField
-              label={langPackLabel("txtContractNumber") || "Contract Number"}
-              value={formContractNumber}
-              onChange={(e) => setFormContractNumber(e.target.value)}
-              error={!!formErrors.contract_number}
-              helperText={formErrors.contract_number}
-              required
-              fullWidth
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => { setCreateDialogOpen(false); resetForm(); }}>{langPackLabel("txtCancel") || "Cancel"}</Button>
-          <Button variant="contained" onClick={handleCreateCompany} disabled={creating}>
-            {creating ? <CircularProgress size={20} /> : (langPackLabel("txtCreate") || "Create")}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Reset Password Confirmation Dialog */}
-      <Dialog
-        open={resetDialogOpen}
-        onClose={() => { setResetDialogOpen(false); setResetTargetUser(null); }}
-      >
-        <DialogTitle>{langPackLabel("txtResetAdminPassword") || "Reset Admin Password"}</DialogTitle>
-        <DialogContent>
-          <Typography>
-            {langPackLabel("txtResetPasswordConfirm") || "Reset password for"} <strong>{resetTargetUser?.email}</strong> {langPackLabel("txtResetPasswordDefault") || "to default (Pp123456)?"}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => { setResetDialogOpen(false); setResetTargetUser(null); }}>{langPackLabel("txtCancel") || "Cancel"}</Button>
-          <Button variant="contained" color="warning" onClick={handleResetPassword} disabled={resetting}>
-            {resetting ? <CircularProgress size={20} /> : (langPackLabel("txtResetPassword") || "Reset Password")}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Success Snackbar */}
-      <Snackbar
-        open={!!successMessage}
-        autoHideDuration={4000}
-        onClose={() => setSuccessMessage(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity="success" onClose={() => setSuccessMessage(null)} variant="filled">
-          {successMessage}
-        </Alert>
-      </Snackbar>
+                  )}
+                </Box>
+                <Chip label={c.status ? (langPackLabel("txtActive") || 'Active') : (langPackLabel("txtInactive") || 'Inactive')} color={c.status ? 'success' : 'error'} size="small" />
+              </Box>
+            </CardContent>
+          </Card>
+        ))}
+      </Box>
     </Box>
   );
 };

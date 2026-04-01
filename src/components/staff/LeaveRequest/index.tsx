@@ -30,6 +30,8 @@ import { createLeaveRequestSchema } from '../../../utils/validation';
 import { LeaveType, User, LeaveBalanceSummary } from '../../../types';
 import { calculateSeniorityYears } from '../../../utils/entitlementCalculator';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { localizedBalanceName } from '../../../utils/localize';
+import LocalizedDatePicker from '../../common/LocalizedDatePicker';
 
 interface LeaveRequestFormData {
   leaveTypeId: string;
@@ -47,7 +49,7 @@ function isAnnualLeaveType(name: string): boolean {
 }
 
 const LeaveRequest: React.FC = () => {
-  const { langPackLabel } = useLanguage();
+  const { langPackLabel, language } = useLanguage();
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
@@ -165,7 +167,7 @@ const LeaveRequest: React.FC = () => {
     const balance = balances.find((b) => b.leave_type_id === watchLeaveTypeId);
     if (balance && businessDays > balance.remaining) {
       setBalanceWarning(
-        `This request (${businessDays} days) exceeds your remaining balance of ${balance.remaining} days for ${balance.leave_type_name}.`
+        `This request (${businessDays} days) exceeds your remaining balance of ${balance.remaining} days for ${localizedBalanceName(balance, language)}.`
       );
     } else {
       setBalanceWarning(null);
@@ -271,6 +273,35 @@ const LeaveRequest: React.FC = () => {
     }
   };
 
+  const getLeaveTypeHint = (): string | null => {
+    if (!watchLeaveTypeId) return null;
+    const lt = leaveTypes.find((l) => l.id === watchLeaveTypeId);
+    if (!lt) return null;
+    const n = lt.name.toLowerCase();
+    const isTr = language === 'tr';
+    if (n.includes('sick') || n.includes('hastalık') || n.includes('sağlık'))
+      return isTr
+        ? 'Hastalık izni için doktor raporu gereklidir. Raporu yöneticinize e-posta ile gönderin.'
+        : 'A medical report is required for sick leave. Please email the report to your manager.';
+    if (n.includes('matern') || n.includes('doğum'))
+      return isTr
+        ? 'Doğum izni için doktor raporu ve doğum belgesi gereklidir. Belgeleri İK departmanına iletin.'
+        : 'Maternity leave requires a medical report and birth certificate. Submit documents to HR.';
+    if (n.includes('patern') || n.includes('babalık'))
+      return isTr
+        ? 'Babalık izni için doğum belgesi gereklidir. Belgeyi yöneticinize iletin.'
+        : 'Paternity leave requires a birth certificate. Submit the document to your manager.';
+    if (n.includes('death') || n.includes('bereavement') || n.includes('vefat') || n.includes('ölüm'))
+      return isTr
+        ? 'Vefat izni için ölüm belgesi veya cenaze belgesi gereklidir. Belgeyi yöneticinize iletin.'
+        : 'Bereavement leave requires a death certificate or funeral notice. Submit to your manager.';
+    if (n.includes('marriage') || n.includes('evlilik') || n.includes('nikah'))
+      return isTr
+        ? 'Evlilik izni için nikah belgesi gereklidir. Belgeyi yöneticinize iletin.'
+        : 'Marriage leave requires a marriage certificate. Submit the document to your manager.';
+    return null;
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -280,12 +311,12 @@ const LeaveRequest: React.FC = () => {
   }
 
   return (
-    <Box sx={{ maxWidth: 700, mx: 'auto', mt: 2 }}>
-      <Typography variant="h4" gutterBottom>{langPackLabel("txtRequestLeave") || "Request Leave"}</Typography>
+    <Box sx={{ maxWidth: 550, mx: 'auto', mt: 2 }}>
+      <Typography variant="h5" gutterBottom>{langPackLabel("txtRequestLeave") || "Request Leave"}</Typography>
 
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ p: 2 }}>
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <Grid container spacing={3}>
+          <Grid container spacing={2}>
             {/* Leave Type */}
             <Grid size={12}>
               <Controller
@@ -296,6 +327,7 @@ const LeaveRequest: React.FC = () => {
                     {...field}
                     select
                     fullWidth
+                    size="small"
                     label={langPackLabel("txtLeaveType") || "Leave Type"}
                     error={!!errors.leaveTypeId}
                     helperText={errors.leaveTypeId?.message}
@@ -305,8 +337,8 @@ const LeaveRequest: React.FC = () => {
                         <Box display="flex" alignItems="center" gap={1}>
                           <Box
                             sx={{
-                              width: 12,
-                              height: 12,
+                              width: 10,
+                              height: 10,
                               borderRadius: '50%',
                               backgroundColor: lt.color_code,
                             }}
@@ -320,19 +352,27 @@ const LeaveRequest: React.FC = () => {
               />
             </Grid>
 
+            {/* Leave Type Hint */}
+            {getLeaveTypeHint() && (
+              <Grid size={12}>
+                <Alert severity="info" variant="outlined" sx={{ py: 0.5 }}>
+                  <Typography variant="caption">{getLeaveTypeHint()}</Typography>
+                </Alert>
+              </Grid>
+            )}
+
             {/* Start Date */}
             <Grid size={{ xs: 12, sm: 6 }}>
               <Controller
                 name="startDate"
                 control={control}
                 render={({ field }) => (
-                  <TextField
-                    fullWidth
+                  <LocalizedDatePicker
                     label={langPackLabel("txtStartDate") || "Start Date"}
-                    type="date"
-                    slotProps={{ inputLabel: { shrink: true } }}
                     value={field.value ? formatDateStr(field.value) : ''}
-                    onChange={(e) => field.onChange(new Date(e.target.value + 'T00:00:00'))}
+                    onChange={(v) => field.onChange(v ? new Date(v + 'T00:00:00') : null)}
+                    size="small"
+                    fullWidth
                     error={!!errors.startDate}
                     helperText={errors.startDate?.message}
                   />
@@ -346,13 +386,12 @@ const LeaveRequest: React.FC = () => {
                 name="endDate"
                 control={control}
                 render={({ field }) => (
-                  <TextField
-                    fullWidth
+                  <LocalizedDatePicker
                     label={langPackLabel("txtEndDate") || "End Date"}
-                    type="date"
-                    slotProps={{ inputLabel: { shrink: true } }}
                     value={field.value ? formatDateStr(field.value) : ''}
-                    onChange={(e) => field.onChange(new Date(e.target.value + 'T00:00:00'))}
+                    onChange={(v) => field.onChange(v ? new Date(v + 'T00:00:00') : null)}
+                    size="small"
+                    fullWidth
                     error={!!errors.endDate}
                     helperText={errors.endDate?.message}
                     disabled={watchIsHalfDay}
@@ -361,32 +400,32 @@ const LeaveRequest: React.FC = () => {
               />
             </Grid>
 
-            {/* Business Days Display */}
+            {/* Business Days + Half-Day Toggle inline */}
             <Grid size={12}>
-              <Chip
-                label={`Business days: ${businessDays}`}
-                color={businessDays > 0 ? 'primary' : 'default'}
-                variant="outlined"
-              />
-            </Grid>
-
-            {/* Half-Day Toggle */}
-            <Grid size={12}>
-              <Controller
-                name="isHalfDay"
-                control={control}
-                render={({ field }) => (
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={field.value}
-                        onChange={(e) => field.onChange(e.target.checked)}
-                      />
-                    }
-                    label={langPackLabel("txtHalfDayRequest") || "Half-day request"}
-                  />
-                )}
-              />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Chip
+                  label={`${langPackLabel("txtBusinessDays") || "Business days"}: ${businessDays}`}
+                  color={businessDays > 0 ? 'primary' : 'default'}
+                  variant="outlined"
+                  size="small"
+                />
+                <Controller
+                  name="isHalfDay"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                          size="small"
+                        />
+                      }
+                      label={<Typography variant="body2">{langPackLabel("txtHalfDayRequest") || "Half-day request"}</Typography>}
+                    />
+                  )}
+                />
+              </Box>
             </Grid>
 
             {/* Half-Day Period Selector */}
@@ -400,6 +439,7 @@ const LeaveRequest: React.FC = () => {
                       {...field}
                       select
                       fullWidth
+                      size="small"
                       label={langPackLabel("txtHalfDayPeriod") || "Half-Day Period"}
                       error={!!errors.halfDayPeriod}
                       helperText={errors.halfDayPeriod?.message}
@@ -422,6 +462,7 @@ const LeaveRequest: React.FC = () => {
                     {...field}
                     select
                     fullWidth
+                    size="small"
                     label={langPackLabel("txtCoveringPerson") || "Covering Person (Optional)"}
                   >
                     <MenuItem value="">
@@ -446,13 +487,14 @@ const LeaveRequest: React.FC = () => {
                   <TextField
                     {...field}
                     fullWidth
+                    size="small"
                     multiline
-                    rows={3}
+                    rows={4}
                     label={langPackLabel("txtReasonOptional") || "Reason (Optional)"}
                     error={!!errors.reason}
                     helperText={
                       errors.reason?.message ||
-                      `${(field.value || '').length}/500 characters`
+                      `${(field.value || '').length}/500`
                     }
                     slotProps={{ htmlInput: { maxLength: 500 } }}
                   />
@@ -493,10 +535,9 @@ const LeaveRequest: React.FC = () => {
               <Button
                 type="submit"
                 variant="contained"
-                size="large"
                 fullWidth
                 disabled={submitting || !!approverError || !!seniorityWarning}
-                startIcon={submitting ? <CircularProgress size={20} /> : undefined}
+                startIcon={submitting ? <CircularProgress size={18} /> : undefined}
               >
                 {submitting ? (langPackLabel("txtSubmitting") || 'Submitting...') : (langPackLabel("txtSubmitRequest") || 'Submit Leave Request')}
               </Button>

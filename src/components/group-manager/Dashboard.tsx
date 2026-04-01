@@ -31,8 +31,11 @@ import {
 import { apiClient } from '../../config/api';
 import { useAuth } from '../../hooks/useAuth';
 import { BalanceService } from '../../services/balance';
-import { EnhancedLeaveBalanceSummary } from '../../types';
+import { HolidaysService } from '../../services/holidays';
+import { EnhancedLeaveBalanceSummary, Holiday } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { localizedBalanceName } from '../../utils/localize';
+import { getDayNames } from '../../utils/calendarLocalizer';
 
 interface GroupStats {
   totalMembers: number;
@@ -47,10 +50,12 @@ interface WeekDayAvailability {
   dayName: string;
   onLeaveCount: number;
   memberNames: string[];
+  isHoliday: boolean;
+  holidayName: string;
 }
 
 const GroupManagerDashboard: React.FC = () => {
-  const { langPackLabel } = useLanguage();
+  const { langPackLabel, language } = useLanguage();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const [stats, setStats] = useState<GroupStats>({
@@ -155,7 +160,6 @@ const GroupManagerDashboard: React.FC = () => {
     monday.setDate(now.getDate() + mondayOffset);
     monday.setHours(0, 0, 0, 0);
 
-    // Generate 4 weeks of weekdays (Mon-Fri)
     const weekDays: Date[] = [];
     for (let week = 0; week < 4; week++) {
       for (let day = 0; day < 5; day++) {
@@ -165,19 +169,40 @@ const GroupManagerDashboard: React.FC = () => {
       }
     }
 
-    const rangeStart = weekDays[0].toISOString().split('T')[0];
-    const rangeEnd = weekDays[weekDays.length - 1].toISOString().split('T')[0];
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const toLocalDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const dateLocale = language === 'tr' ? 'tr-TR' : 'en-US';
+    const rangeStart = toLocalDate(weekDays[0]);
+    const rangeEnd = toLocalDate(weekDays[weekDays.length - 1]);
+
+    // Fetch holidays
+    let holidays: Holiday[] = [];
+    try {
+      if (currentUser?.company_id) {
+        holidays = await HolidaysService.getAll(currentUser.company_id) || [];
+      }
+    } catch { /* skip */ }
 
     const memberIds = groupMembers.map((m) => m.id);
     if (memberIds.length === 0) {
       setWeekAvailability(
-        weekDays.map((d) => ({
-          date: d,
-          label: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-          dayName: d.toLocaleDateString(undefined, { weekday: 'short' }),
-          onLeaveCount: 0,
-          memberNames: [],
-        }))
+        weekDays.map((d) => {
+          const dateStr = toLocalDate(d);
+          const holiday = holidays.find((h) => {
+            const hStart = (h.holiday_date || '').split('T')[0];
+            const hEnd = (h.holiday_end_date || h.holiday_date || '').split('T')[0];
+            return dateStr >= hStart && dateStr <= hEnd;
+          });
+          return {
+            date: d,
+            label: d.toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' }),
+            dayName: d.toLocaleDateString(dateLocale, { weekday: 'short' }),
+            onLeaveCount: 0,
+            memberNames: [],
+            isHoliday: !!holiday,
+            holidayName: holiday?.name || '',
+          };
+        })
       );
       return;
     }
@@ -194,19 +219,28 @@ const GroupManagerDashboard: React.FC = () => {
       console.error('Error fetching week leaves:', err);
     }
 
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayNames = getDayNames(language);
     const availability: WeekDayAvailability[] = weekDays.map((d) => {
-      const dateStr = d.toISOString().split('T')[0];
-      const onLeave = (weekLeavesData ?? []).filter(
-        (l: any) => l.start_date <= dateStr && l.end_date >= dateStr
-      );
+      const dateStr = toLocalDate(d);
+      const onLeave = (weekLeavesData ?? []).filter((l: any) => {
+        const lStart = (l.start_date || '').split('T')[0];
+        const lEnd = (l.end_date || '').split('T')[0];
+        return lStart <= dateStr && lEnd >= dateStr;
+      });
       const names = onLeave.map((l: any) => l.user_id?.full_name ?? (l.user as any)?.full_name ?? 'Unknown');
+      const holiday = holidays.find((h) => {
+        const hStart = (h.holiday_date || '').split('T')[0];
+        const hEnd = (h.holiday_end_date || h.holiday_date || '').split('T')[0];
+        return dateStr >= hStart && dateStr <= hEnd;
+      });
       return {
         date: d,
-        label: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        label: d.toLocaleDateString(dateLocale, { month: 'short', day: 'numeric' }),
         dayName: dayNames[d.getDay()],
         onLeaveCount: onLeave.length,
         memberNames: names,
+        isHoliday: !!holiday,
+        holidayName: holiday?.name || '',
       };
     });
 
@@ -237,67 +271,67 @@ const GroupManagerDashboard: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600 }}>
           {langPackLabel("txtDashboard") || "Group Manager Dashboard"}
         </Typography>
-        <Button variant="outlined" startIcon={<Refresh />} onClick={fetchDashboardData}>{langPackLabel("txtRefresh") || "Refresh"}</Button>
+        <Button variant="outlined" size="small" startIcon={<Refresh />} onClick={fetchDashboardData}>{langPackLabel("txtRefresh") || "Refresh"}</Button>
       </Box>
 
       {/* Summary Cards */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
         {/* Team Size */}
-        <Card sx={{ flex: '1 1 200px', minWidth: '200px' }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <People color="primary" sx={{ mr: 1 }} />
-              <Typography variant="h6">{langPackLabel("txtTeamSize") || "Team Size"}</Typography>
+        <Card sx={{ flex: '1 1 140px', minWidth: 140 }}>
+          <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <People color="primary" sx={{ mr: 0.5, fontSize: 20 }} />
+              <Typography variant="body2" fontWeight={600}>{langPackLabel("txtTeamSize") || "Team Size"}</Typography>
             </Box>
-            <Typography variant="h4" color="primary">
+            <Typography variant="h5" color="primary" fontWeight={700}>
               {stats.totalMembers}
             </Typography>
           </CardContent>
         </Card>
 
         {/* On Leave Today */}
-        <Card sx={{ flex: '1 1 200px', minWidth: '200px' }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <BeachAccess sx={{ mr: 1, color: 'warning.main' }} />
-              <Typography variant="h6">{langPackLabel("txtOnLeaveToday") || "On Leave Today"}</Typography>
+        <Card sx={{ flex: '1 1 140px', minWidth: 140 }}>
+          <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <BeachAccess sx={{ mr: 0.5, color: 'warning.main', fontSize: 20 }} />
+              <Typography variant="body2" fontWeight={600}>{langPackLabel("txtOnLeaveToday") || "On Leave Today"}</Typography>
             </Box>
-            <Typography variant="h4" sx={{ color: 'warning.main' }}>
+            <Typography variant="h5" sx={{ color: 'warning.main' }} fontWeight={700}>
               {stats.onLeaveToday}
             </Typography>
           </CardContent>
         </Card>
 
         {/* Pending Approvals — Clickable */}
-        <Card sx={{ flex: '1 1 200px', minWidth: '200px' }}>
+        <Card sx={{ flex: '1 1 140px', minWidth: 140 }}>
           <CardActionArea onClick={() => navigate('/group-manager/approvals')}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <PendingActions sx={{ mr: 1, color: 'error.main' }} />
-                <Typography variant="h6">{langPackLabel("txtPendingApprovals") || "Pending Approvals"}</Typography>
+            <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <PendingActions sx={{ mr: 0.5, color: 'error.main', fontSize: 20 }} />
+                <Typography variant="body2" fontWeight={600}>{langPackLabel("txtPendingApprovals") || "Pending Approvals"}</Typography>
               </Box>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Typography variant="h4" sx={{ color: 'error.main' }}>
+                <Typography variant="h5" sx={{ color: 'error.main' }} fontWeight={700}>
                   {stats.pendingApprovals}
                 </Typography>
-                <ArrowForward color="action" />
+                <ArrowForward color="action" sx={{ fontSize: 18 }} />
               </Box>
             </CardContent>
           </CardActionArea>
         </Card>
 
         {/* Upcoming Leaves */}
-        <Card sx={{ flex: '1 1 200px', minWidth: '200px' }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <EventNote sx={{ mr: 1, color: 'info.main' }} />
-              <Typography variant="h6">{langPackLabel("txtUpcomingLeaves") || "Upcoming Leaves"}</Typography>
+        <Card sx={{ flex: '1 1 140px', minWidth: 140 }}>
+          <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <EventNote sx={{ mr: 0.5, color: 'info.main', fontSize: 20 }} />
+              <Typography variant="body2" fontWeight={600}>{langPackLabel("txtUpcomingLeaves") || "Upcoming Leaves"}</Typography>
             </Box>
-            <Typography variant="h4" sx={{ color: 'info.main' }}>
+            <Typography variant="h5" sx={{ color: 'info.main' }} fontWeight={700}>
               {stats.upcomingLeaves}
             </Typography>
             <Typography variant="caption" color="text.secondary">
@@ -310,27 +344,27 @@ const GroupManagerDashboard: React.FC = () => {
       {/* Personal Leave Balances */}
       {personalBalances.length > 0 && (
         <>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
             {langPackLabel("txtMyLeaveBalances") || "My Leave Balances"}
           </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
             {personalBalances.filter((b) => {
               const name = b.leave_type_name.toLowerCase();
               return name.includes('annual') || name.includes('casual') || name.includes('sick') || b.used > 0;
             }).map((balance) => (
               <Card
                 key={balance.leave_type_id}
-                sx={{ flex: '1 1 200px', minWidth: '200px', borderTop: 4, borderColor: balance.color_code }}
+                sx={{ flex: '1 1 140px', minWidth: 140, borderTop: 3, borderColor: balance.color_code }}
               >
-                <CardContent>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                    {balance.leave_type_name}
+                <CardContent sx={{ py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                    {localizedBalanceName(balance, language)}
                   </Typography>
-                  <Typography variant="h4" sx={{ color: balance.remaining < 0 ? 'error.main' : balance.color_code, mb: 1 }}>
+                  <Typography variant="h5" sx={{ color: balance.remaining < 0 ? 'error.main' : balance.color_code }} fontWeight={700}>
                     {balance.remaining}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">{langPackLabel("txtRemaining") || "remaining"}</Typography>
-                  <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
+                  <Typography variant="caption" color="text.secondary">{langPackLabel("txtRemaining") || "remaining"}</Typography>
+                  <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
                     <Typography variant="caption" color="text.secondary">{langPackLabel("txtAllocated") || "Allocated"}: {balance.allocated}</Typography>
                     <Typography variant="caption" color="text.secondary">{langPackLabel("txtUsed") || "Used"}: {balance.used}</Typography>
                     <Typography variant="caption" color="text.secondary">{langPackLabel("txtPendingLabel") || "Pending"}: {balance.pending}</Typography>
@@ -343,16 +377,16 @@ const GroupManagerDashboard: React.FC = () => {
       )}
 
       {/* Group Availability — 4 Weeks */}
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
         {langPackLabel("txtGroupAvailability") || "Group Availability — Next 4 Weeks"}
       </Typography>
-      <Paper sx={{ mb: 4, overflow: 'hidden' }}>
+      <Paper sx={{ mb: 3, overflow: 'hidden' }}>
         <TableContainer>
           <Table size="small">
             <TableHead>
               <TableRow>
                 <TableCell sx={{ fontWeight: 600, width: 60 }}>{langPackLabel("txtWeek") || "Week"}</TableCell>
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day) => (
+                {getDayNames(language).slice(1, 6).map((day) => (
                   <TableCell key={day} align="center" sx={{ fontWeight: 600 }}>
                     {day}
                   </TableCell>
@@ -369,22 +403,27 @@ const GroupManagerDashboard: React.FC = () => {
                     <TableCell>
                       <Typography variant="caption" fontWeight={600}>{weekLabel}</Typography>
                     </TableCell>
-                    {weekDays.map((day) => (
+                    {weekDays.map((day) => {
+                      const pad2 = (n: number) => n.toString().padStart(2, '0');
+                      const cellDateStr = `${day.date.getFullYear()}-${pad2(day.date.getMonth() + 1)}-${pad2(day.date.getDate())}`;
+                      const isToday = cellDateStr === todayStr;
+                      return (
                       <TableCell
                         key={day.label}
                         align="center"
                         sx={{
-                          bgcolor:
-                            day.date.toISOString().split('T')[0] === todayStr
-                              ? 'primary.light'
-                              : 'transparent',
+                          bgcolor: day.isHoliday ? 'error.light' : isToday ? 'primary.light' : 'transparent',
                           verticalAlign: 'top',
                         }}
                       >
                         <Typography variant="caption" display="block" color="text.secondary">
                           {day.label}
                         </Typography>
-                        {day.onLeaveCount === 0 ? (
+                        {day.isHoliday ? (
+                          <Typography variant="caption" display="block" color="error.dark" fontWeight={600}>
+                            {day.holidayName}
+                          </Typography>
+                        ) : day.onLeaveCount === 0 ? (
                           <Chip label="✓" color="success" size="small" variant="outlined" />
                         ) : (
                           <Box>
@@ -402,7 +441,8 @@ const GroupManagerDashboard: React.FC = () => {
                           </Box>
                         )}
                       </TableCell>
-                    ))}
+                      );
+                    })}
                   </TableRow>
                 );
               })}

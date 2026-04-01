@@ -149,9 +149,9 @@ const TeamBalances: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600 }}>{langPackLabel("txtTeamLeaveBalances") || "Team Leave Balances"}</Typography>
-        <Button variant="outlined" startIcon={<Refresh />} onClick={fetchData}>{langPackLabel("txtRefresh") || "Refresh"}</Button>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600 }}>{langPackLabel("txtTeamLeaveBalances") || "Team Leave Balances"}</Typography>
+        <Button variant="outlined" size="small" startIcon={<Refresh />} onClick={fetchData}>{langPackLabel("txtRefresh") || "Refresh"}</Button>
       </Box>
       {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>{error}</Alert>}
       {rows.length === 0 ? (

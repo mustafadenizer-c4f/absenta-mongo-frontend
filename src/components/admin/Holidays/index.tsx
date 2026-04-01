@@ -15,7 +15,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   IconButton,
   CircularProgress,
   Alert,
@@ -32,9 +31,9 @@ import {
   Edit,
   Delete,
   Refresh,
-  Event,
 } from '@mui/icons-material';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import LocalizedDatePicker from '../../common/LocalizedDatePicker';
 
 const Holidays: React.FC = () => {
   const { langPackLabel } = useLanguage();
@@ -171,20 +170,22 @@ const Holidays: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600 }}>
           {langPackLabel("txtHolidaysManagement") || "Holidays Management"}
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             variant="outlined"
             startIcon={<Refresh />}
             onClick={fetchHolidays}
+            size="small"
           >{langPackLabel("txtRefresh") || "Refresh"}</Button>
           <Button
             variant="contained"
             startIcon={<Add />}
             onClick={() => handleOpenDialog()}
+            size="small"
           >{langPackLabel("txtAddHoliday") || "Add Holiday"}</Button>
         </Box>
       </Box>
@@ -195,74 +196,98 @@ const Holidays: React.FC = () => {
         </Alert>
       )}
 
-      {/* Holidays Table */}
+      {/* Recurring Holidays */}
+      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>{langPackLabel("txtRecurringHolidays") || "Recurring Holidays"}</Typography>
       <Paper sx={{ mb: 3 }}>
         <TableContainer>
-          <Table>
+          <Table size="small">
             <TableHead>
               <TableRow>
                 <TableCell><strong>{langPackLabel("txtDate") || "Date"}</strong></TableCell>
                 <TableCell><strong>{langPackLabel("txtName") || "Name"}</strong></TableCell>
                 <TableCell><strong>{langPackLabel("txtDescription") || "Description"}</strong></TableCell>
-                <TableCell><strong>{langPackLabel("txtRecurring") || "Recurring"}</strong></TableCell>
                 <TableCell><strong>{langPackLabel("txtActions") || "Actions"}</strong></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {holidays.length === 0 ? (
+              {holidays.filter(h => h.is_recurring).length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center">
-                    <Box sx={{ py: 4 }}>
-                      <Event sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
-                      <Typography color="text.secondary">
-                        {langPackLabel("txtNoHolidaysYet") || 'No holidays configured yet. Click "Add Holiday" to get started.'}
+                  <TableCell colSpan={4} align="center">
+                    <Box sx={{ py: 3 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {langPackLabel("txtNoRecurringHolidays") || "No recurring holidays configured yet."}
                       </Typography>
                     </Box>
                   </TableCell>
                 </TableRow>
               ) : (
-                holidays.map((holiday) => (
+                holidays.filter(h => h.is_recurring).map((holiday) => (
                   <TableRow key={holiday.id} hover>
                     <TableCell>
-                      <Typography fontWeight="medium">
+                      <Typography variant="body2" fontWeight="medium">
                         {formatDate(holiday.holiday_date)}
                         {holiday.holiday_end_date && holiday.holiday_end_date !== holiday.holiday_date
                           ? ` — ${formatDate(holiday.holiday_end_date)}`
                           : ''}
                       </Typography>
                     </TableCell>
+                    <TableCell><Typography variant="body2" fontWeight="medium">{holiday.name}</Typography></TableCell>
+                    <TableCell><Typography variant="body2" color="textSecondary">{holiday.description || '—'}</Typography></TableCell>
                     <TableCell>
-                      <Typography fontWeight="medium">{holiday.name}</Typography>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <IconButton size="small" onClick={() => handleOpenDialog(holiday)} color="primary"><Edit /></IconButton>
+                        <IconButton size="small" onClick={() => handleDeleteClick(holiday)} color="error"><Delete /></IconButton>
+                      </Box>
                     </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+
+      {/* One-Time Holidays */}
+      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>{langPackLabel("txtOneTimeHolidays") || "One-Time Holidays"}</Typography>
+      <Paper sx={{ mb: 3 }}>
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell><strong>{langPackLabel("txtDate") || "Date"}</strong></TableCell>
+                <TableCell><strong>{langPackLabel("txtName") || "Name"}</strong></TableCell>
+                <TableCell><strong>{langPackLabel("txtDescription") || "Description"}</strong></TableCell>
+                <TableCell><strong>{langPackLabel("txtActions") || "Actions"}</strong></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {holidays.filter(h => !h.is_recurring).length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} align="center">
+                    <Box sx={{ py: 3 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {langPackLabel("txtNoOneTimeHolidays") || "No one-time holidays configured yet."}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                holidays.filter(h => !h.is_recurring).map((holiday) => (
+                  <TableRow key={holiday.id} hover>
                     <TableCell>
-                      <Typography variant="body2" color="textSecondary">
-                        {holiday.description || '—'}
+                      <Typography variant="body2" fontWeight="medium">
+                        {formatDate(holiday.holiday_date)}
+                        {holiday.holiday_end_date && holiday.holiday_end_date !== holiday.holiday_date
+                          ? ` — ${formatDate(holiday.holiday_end_date)}`
+                          : ''}
                       </Typography>
                     </TableCell>
+                    <TableCell><Typography variant="body2" fontWeight="medium">{holiday.name}</Typography></TableCell>
+                    <TableCell><Typography variant="body2" color="textSecondary">{holiday.description || '—'}</Typography></TableCell>
                     <TableCell>
-                      <Chip
-                        label={holiday.is_recurring ? (langPackLabel("txtRecurring") || 'Recurring') : (langPackLabel("txtOneTime") || 'One-time')}
-                        color={holiday.is_recurring ? 'primary' : 'default'}
-                        variant="outlined"
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenDialog(holiday)}
-                          color="primary"
-                        >
-                          <Edit />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDeleteClick(holiday)}
-                          color="error"
-                        >
-                          <Delete />
-                        </IconButton>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <IconButton size="small" onClick={() => handleOpenDialog(holiday)} color="primary"><Edit /></IconButton>
+                        <IconButton size="small" onClick={() => handleDeleteClick(holiday)} color="error"><Delete /></IconButton>
                       </Box>
                     </TableCell>
                   </TableRow>
@@ -312,29 +337,25 @@ const Holidays: React.FC = () => {
               sx={{ mb: 2 }}
             />
 
-            <TextField
-              margin="dense"
-              label={langPackLabel("txtStartDate") || "Start Date"}
-              type="date"
-              fullWidth
-              required
-              slotProps={{ inputLabel: { shrink: true } }}
-              value={formData.holiday_date}
-              onChange={(e) => setFormData({ ...formData, holiday_date: e.target.value })}
-              sx={{ mb: 2 }}
-            />
+            <Box sx={{ mb: 2 }}>
+              <LocalizedDatePicker
+                label={langPackLabel("txtStartDate") || "Start Date"}
+                value={formData.holiday_date}
+                onChange={(v) => setFormData({ ...formData, holiday_date: v })}
+                fullWidth
+                required
+              />
+            </Box>
 
-            <TextField
-              margin="dense"
-              label={langPackLabel("txtEndDate") || "End Date"}
-              type="date"
-              fullWidth
-              slotProps={{ inputLabel: { shrink: true } }}
-              value={formData.holiday_end_date}
-              onChange={(e) => setFormData({ ...formData, holiday_end_date: e.target.value })}
-              helperText={langPackLabel("txtLeaveEmptySingleDay") || "Leave empty for a single-day holiday"}
-              sx={{ mb: 2 }}
-            />
+            <Box sx={{ mb: 2 }}>
+              <LocalizedDatePicker
+                label={langPackLabel("txtEndDate") || "End Date"}
+                value={formData.holiday_end_date}
+                onChange={(v) => setFormData({ ...formData, holiday_end_date: v })}
+                fullWidth
+                helperText={langPackLabel("txtLeaveEmptySingleDay") || "Leave empty for a single-day holiday"}
+              />
+            </Box>
 
             <TextField
               margin="dense"

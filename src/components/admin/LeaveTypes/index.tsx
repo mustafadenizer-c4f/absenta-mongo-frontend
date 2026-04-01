@@ -38,7 +38,9 @@ import { useLanguage } from '../../../contexts/LanguageContext';
 interface LeaveType {
   id: string;
   name: string;
+  name_tr?: string;
   description?: string;
+  description_tr?: string;
   default_days: number;
   color_code: string;
   is_active: boolean;
@@ -56,7 +58,9 @@ const LeaveTypes: React.FC = () => {
   
   const [formData, setFormData] = useState({
     name: '',
+    name_tr: '',
     description: '',
+    description_tr: '',
     default_days: 0,
     color_code: '#818CF8',
     is_active: true,
@@ -83,7 +87,9 @@ const LeaveTypes: React.FC = () => {
       setEditingType(type);
       setFormData({
         name: type.name,
+        name_tr: type.name_tr || '',
         description: type.description || '',
+        description_tr: type.description_tr || '',
         default_days: type.default_days,
         color_code: type.color_code,
         is_active: type.is_active,
@@ -92,7 +98,9 @@ const LeaveTypes: React.FC = () => {
       setEditingType(null);
       setFormData({
         name: '',
+        name_tr: '',
         description: '',
+        description_tr: '',
         default_days: 0,
         color_code: '#818CF8',
         is_active: true,
@@ -113,7 +121,9 @@ const LeaveTypes: React.FC = () => {
         // Update existing leave type
         await apiClient.put(`/leave-types/${editingType.id}`, {
           name: formData.name,
+          name_tr: formData.name_tr || null,
           description: formData.description || null,
+          description_tr: formData.description_tr || null,
           default_days: formData.default_days,
           color_code: formData.color_code,
           is_active: formData.is_active,
@@ -122,7 +132,9 @@ const LeaveTypes: React.FC = () => {
         // Create new leave type
         await apiClient.post('/leave-types', {
           name: formData.name,
+          name_tr: formData.name_tr || null,
           description: formData.description || null,
+          description_tr: formData.description_tr || null,
           default_days: formData.default_days,
           color_code: formData.color_code,
           is_active: formData.is_active,
@@ -166,20 +178,22 @@ const LeaveTypes: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600 }}>
           {langPackLabel("txtLeaveTypesManagement") || "Leave Types Management"}
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             variant="outlined"
             startIcon={<Refresh />}
             onClick={fetchLeaveTypes}
+            size="small"
           >{langPackLabel("txtRefresh") || "Refresh"}</Button>
           <Button
             variant="contained"
             startIcon={<Add />}
             onClick={() => handleOpenDialog()}
+            size="small"
           >{langPackLabel("txtAddLeaveType") || "Add Leave Type"}</Button>
         </Box>
       </Box>
@@ -301,7 +315,7 @@ const LeaveTypes: React.FC = () => {
             <TextField
               autoFocus
               margin="dense"
-              label={langPackLabel("txtLeaveTypeName") || "Leave Type Name"}
+              label={(langPackLabel("txtLeaveTypeName") || "Leave Type Name") + " (EN)"}
               type="text"
               fullWidth
               required
@@ -309,16 +323,36 @@ const LeaveTypes: React.FC = () => {
               onChange={(e) => setFormData({...formData, name: e.target.value})}
               sx={{ mb: 2 }}
             />
+            <TextField
+              margin="dense"
+              label={(langPackLabel("txtLeaveTypeName") || "Leave Type Name") + " (TR)"}
+              type="text"
+              fullWidth
+              value={formData.name_tr}
+              onChange={(e) => setFormData({...formData, name_tr: e.target.value})}
+              sx={{ mb: 2 }}
+            />
             
             <TextField
               margin="dense"
-              label={langPackLabel("txtDescription") || "Description"}
+              label={(langPackLabel("txtDescription") || "Description") + " (EN)"}
               type="text"
               fullWidth
               multiline
-              rows={3}
+              rows={2}
               value={formData.description}
               onChange={(e) => setFormData({...formData, description: e.target.value})}
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              margin="dense"
+              label={(langPackLabel("txtDescription") || "Description") + " (TR)"}
+              type="text"
+              fullWidth
+              multiline
+              rows={2}
+              value={formData.description_tr}
+              onChange={(e) => setFormData({...formData, description_tr: e.target.value})}
               sx={{ mb: 2 }}
             />
             

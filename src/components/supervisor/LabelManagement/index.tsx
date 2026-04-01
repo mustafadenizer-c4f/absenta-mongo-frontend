@@ -10,13 +10,16 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   TextField,
   IconButton,
   Button,
   CircularProgress,
   Snackbar,
   Alert,
+  InputAdornment,
 } from '@mui/material';
+import { Search } from '@mui/icons-material';
 import { Save, Edit, Add } from '@mui/icons-material';
 import { LanguageService, ILabel } from '../../../services/language';
 import { useLanguage } from '../../../contexts/LanguageContext';
@@ -30,6 +33,9 @@ const LabelManagement: React.FC = () => {
   const [editingLabelKey, setEditingLabelKey] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<{ tr: string; en: string }>({ tr: '', en: '' });
   const [savingLabel, setSavingLabel] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(20);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false, message: '', severity: 'success',
   });
@@ -87,9 +93,18 @@ const LabelManagement: React.FC = () => {
     }
   };
 
+  const filteredLabels = labels.filter(
+    (l) =>
+      !searchQuery ||
+      l.labeltext.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      l.tr.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      l.en.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  const paginatedLabels = filteredLabels.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
   return (
     <Box>
-      <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600, mb: 1 }}>{langPackLabel("txtLabelManagement") || "Label Management"}</Typography>
+      <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600, mb: 1 }}>{langPackLabel("txtLabelManagement") || "Label Management"}</Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
         {langPackLabel("txtLabelManagementDesc") || "Manage translatable labels for the application. Each label has a unique key and translations for Turkish and English."}
       </Typography>
@@ -129,6 +144,23 @@ const LabelManagement: React.FC = () => {
         </Box>
       </Paper>
 
+      {/* Search */}
+      <TextField
+        size="small"
+        placeholder={langPackLabel("txtSearchLabels") || "Search labels…"}
+        value={searchQuery}
+        onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
+        sx={{ mb: 2 }}
+        fullWidth
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Search />
+            </InputAdornment>
+          ),
+        }}
+      />
+
       {/* Labels table */}
       <Paper>
         <TableContainer>
@@ -155,7 +187,7 @@ const LabelManagement: React.FC = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                labels.map((label) => (
+                paginatedLabels.map((label) => (
                   <TableRow key={label.labeltext} hover>
                     <TableCell>
                       <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
@@ -212,6 +244,15 @@ const LabelManagement: React.FC = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        <TablePagination
+          component="div"
+          count={filteredLabels.length}
+          page={page}
+          onPageChange={(_e, newPage) => setPage(newPage)}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+          rowsPerPageOptions={[10, 20, 50, 100]}
+        />
       </Paper>
 
       <Snackbar

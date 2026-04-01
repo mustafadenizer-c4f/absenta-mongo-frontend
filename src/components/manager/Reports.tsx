@@ -31,6 +31,8 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { LeaveRequest, LeaveType, User } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { localizedLeaveTypeName } from '../../utils/localize';
+import LocalizedDatePicker from '../common/LocalizedDatePicker';
 
 interface ReportLeaveRequest extends LeaveRequest {
   leave_type?: LeaveType;
@@ -38,7 +40,7 @@ interface ReportLeaveRequest extends LeaveRequest {
 }
 
 const Reports: React.FC = () => {
-  const { langPackLabel } = useLanguage();
+  const { langPackLabel, language } = useLanguage();
   const { user: currentUser } = useSelector((state: RootState) => state.auth);
   const [requests, setRequests] = useState<ReportLeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,14 +103,14 @@ const Reports: React.FC = () => {
   const perLeaveTypeData = useMemo(() => {
     const map = new Map<string, { name: string; days: number; color: string }>();
     for (const r of requests) {
-      const name = r.leave_type?.name ?? 'Unknown';
+      const name = localizedLeaveTypeName(r.leave_type, language);
       const color = r.leave_type?.color_code ?? '#8884d8';
       const existing = map.get(r.leave_type_id) ?? { name, days: 0, color };
       existing.days += r.total_days;
       map.set(r.leave_type_id, existing);
     }
     return Array.from(map.values()).sort((a, b) => b.days - a.days);
-  }, [requests]);
+  }, [requests, language]);
 
   // Chart data: leave usage per month
   const perMonthData = useMemo(() => {
@@ -177,17 +179,18 @@ const Reports: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Assessment color="primary" />
-          <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600 }}>
+          <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600 }}>
             {langPackLabel("txtReports") || "Leave Reports"}
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button variant="outlined" startIcon={<Refresh />} onClick={fetchReportData}>{langPackLabel("txtRefresh") || "Refresh"}</Button>
+          <Button variant="outlined" size="small" startIcon={<Refresh />} onClick={fetchReportData}>{langPackLabel("txtRefresh") || "Refresh"}</Button>
           <Button
             variant="contained"
+            size="small"
             startIcon={<Download />}
             onClick={handleExportCSV}
             disabled={requests.length === 0}
@@ -203,20 +206,16 @@ const Reports: React.FC = () => {
           {langPackLabel("txtDateRangeFilter") || "Date Range Filter"}
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-          <TextField
+          <LocalizedDatePicker
             label={langPackLabel("txtStartDate") || "Start Date"}
-            type="date"
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            slotProps={{ inputLabel: { shrink: true } }}
+            onChange={setStartDate}
             size="small"
           />
-          <TextField
+          <LocalizedDatePicker
             label={langPackLabel("txtEndDate") || "End Date"}
-            type="date"
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            slotProps={{ inputLabel: { shrink: true } }}
+            onChange={setEndDate}
             size="small"
           />
         </Box>

@@ -38,7 +38,10 @@ async function attemptTokenRefresh(): Promise<boolean> {
 function clearTokensAndRedirect(): void {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
-  // Use the basename if set, otherwise just /login
+  // Show a user-friendly message before redirect
+  const lang = localStorage.getItem('user_language') || navigator.language || '';
+  const isTr = lang.toLowerCase().startsWith('tr');
+  alert(isTr ? 'Oturumunuz sona erdi. Lütfen tekrar giriş yapın.' : 'Your session has expired. Please log in again.');
   const base = process.env.PUBLIC_URL || '';
   window.location.href = `${base}/login`;
 }

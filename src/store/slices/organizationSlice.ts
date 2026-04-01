@@ -160,9 +160,9 @@ export const createDepartment = createAsyncThunk(
 
 export const updateDepartment = createAsyncThunk(
   'organization/updateDepartment',
-  async ({ id, name }: { id: string; name: string }, { rejectWithValue }) => {
+  async ({ id, name, groupId }: { id: string; name: string; groupId?: string }, { rejectWithValue }) => {
     try {
-      return await OrganizationService.updateDepartment(id, name);
+      return await OrganizationService.updateDepartment(id, name, groupId);
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -207,9 +207,9 @@ export const createTeam = createAsyncThunk(
 
 export const updateTeam = createAsyncThunk(
   'organization/updateTeam',
-  async ({ id, name }: { id: string; name: string }, { rejectWithValue }) => {
+  async ({ id, name, departmentId }: { id: string; name: string; departmentId?: string }, { rejectWithValue }) => {
     try {
-      return await OrganizationService.updateTeam(id, name);
+      return await OrganizationService.updateTeam(id, name, departmentId);
     } catch (error: any) {
       return rejectWithValue(error.message);
     }

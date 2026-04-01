@@ -24,12 +24,14 @@ import {
   Snackbar,
   Tooltip,
   Collapse,
+  InputAdornment,
 } from '@mui/material';
 import {
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
   ExpandMore,
   ExpandLess,
+  Search,
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../../store';
@@ -38,9 +40,10 @@ import { LeaveService } from '../../../services/leave';
 import { BalanceService } from '../../../services/balance';
 import { LeaveRequest, LeaveBalanceSummary } from '../../../types';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { localizedStatus, formatLocalDate } from '../../../utils/localize';
 
 const GroupManagerApprovals: React.FC = () => {
-  const { langPackLabel } = useLanguage();
+  const { langPackLabel, language } = useLanguage();
   const dispatch = useDispatch<AppDispatch>();
   const { user: currentUser } = useSelector((state: RootState) => state.auth);
 
@@ -72,6 +75,9 @@ const GroupManagerApprovals: React.FC = () => {
   const [showPast, setShowPast] = useState(false);
   const [pastRequests, setPastRequests] = useState<LeaveRequest[]>([]);
   const [pastLoading, setPastLoading] = useState(false);
+  const [pastSearch, setPastSearch] = useState('');
+  const [pastPage, setPastPage] = useState(0);
+  const [pastRowsPerPage, setPastRowsPerPage] = useState(10);
 
   // Fetch pending requests scoped to the group manager's group
   const fetchRequests = useCallback(async () => {
@@ -223,7 +229,7 @@ const GroupManagerApprovals: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
+      <Typography variant="h5" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
         {langPackLabel("txtPendingApprovals") || "Group Pending Approvals"}
       </Typography>
 
@@ -245,7 +251,6 @@ const GroupManagerApprovals: React.FC = () => {
                 <TableHead>
                   <TableRow>
                     <TableCell>{langPackLabel("txtEmployee") || "Employee"}</TableCell>
-                    <TableCell>{langPackLabel("txtRole") || "Role"}</TableCell>
                     <TableCell>{langPackLabel("txtDates") || "Dates"}</TableCell>
                     <TableCell>{langPackLabel("txtLeaveType") || "Leave Type"}</TableCell>
                     <TableCell>{langPackLabel("txtTotalDays") || "Total Days"}</TableCell>
@@ -260,17 +265,13 @@ const GroupManagerApprovals: React.FC = () => {
                     const self = isSelfRequest(req);
                     return (
                       <TableRow key={req.id} hover>
-                        <TableCell>{req.user?.full_name ?? 'Unknown'}</TableCell>
                         <TableCell>
-                          <Chip
-                            label={req.user?.role ?? 'staff'}
-                            size="small"
-                            variant="outlined"
-                          />
+                          <Typography variant="body2" fontWeight={500}>{req.user?.full_name ?? 'Unknown'}</Typography>
+                          <Chip label={req.user?.role ?? 'staff'} size="small" variant="outlined" sx={{ mt: 0.5 }} />
                         </TableCell>
                         <TableCell>
-                          {new Date(req.start_date).toLocaleDateString()} –{' '}
-                          {new Date(req.end_date).toLocaleDateString()}
+                          {formatLocalDate(req.start_date, language)} –{' '}
+                          {formatLocalDate(req.end_date, language)}
                         </TableCell>
                         <TableCell>
                           {req.leave_type ? (
@@ -367,12 +368,12 @@ const GroupManagerApprovals: React.FC = () => {
             {actionTarget && (
               <>
                 {actionType === 'approved' ? (langPackLabel("txtApproveConfirmText") || 'Approve the leave request from') : (langPackLabel("txtRejectConfirmText") || 'Reject the leave request from')}{' '}
-                <strong>{actionTarget.user?.full_name ?? 'this employee'}</strong> for{' '}
+                <strong>{actionTarget.user?.full_name ?? 'this employee'}</strong> {langPackLabel("txtFor") || "for"}{' '}
                 <strong>
-                  {new Date(actionTarget.start_date).toLocaleDateString()} –{' '}
-                  {new Date(actionTarget.end_date).toLocaleDateString()}
+                  {formatLocalDate(actionTarget.start_date, language)} –{' '}
+                  {formatLocalDate(actionTarget.end_date, language)}
                 </strong>{' '}
-                ({actionTarget.total_days} day{actionTarget.total_days !== 1 ? 's' : ''})?
+                ({actionTarget.total_days} {langPackLabel("txtDay") || "Day"})?
               </>
             )}
           </DialogContentText>
@@ -431,6 +432,11 @@ const GroupManagerApprovals: React.FC = () => {
           {showPast ? (langPackLabel("txtHidePastDecisions") || 'Hide Past Decisions') : (langPackLabel("txtShowPastDecisions") || 'Show Past Decisions')}
         </Button>
         <Collapse in={showPast}>
+          <TextField
+            size="small" fullWidth placeholder={langPackLabel("txtSearch") || "Search past decisions…"}
+            value={pastSearch} onChange={(e) => { setPastSearch(e.target.value); setPastPage(0); }} sx={{ mb: 2 }}
+            InputProps={{ startAdornment: <InputAdornment position="start"><Search /></InputAdornment> }}
+          />
           <Paper>
             {pastLoading ? (
               <Box display="flex" justifyContent="center" p={3}>
@@ -440,73 +446,58 @@ const GroupManagerApprovals: React.FC = () => {
               <Box sx={{ p: 4, textAlign: 'center' }}>
                 <Typography color="text.secondary">{langPackLabel("txtNoPastDecisions") || "No past decisions found."}</Typography>
               </Box>
-            ) : (
-              <TableContainer>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>{langPackLabel("txtEmployee") || "Employee"}</TableCell>
-                      <TableCell>{langPackLabel("txtRole") || "Role"}</TableCell>
-                      <TableCell>{langPackLabel("txtLeaveType") || "Leave Type"}</TableCell>
-                      <TableCell>{langPackLabel("txtDates") || "Request Dates"}</TableCell>
-                      <TableCell>{langPackLabel("txtRequested") || "Requested On"}</TableCell>
-                      <TableCell>{langPackLabel("txtDecision") || "Decision"}</TableCell>
-                      <TableCell>{langPackLabel("txtDate") || "Decision Date"}</TableCell>
-                      <TableCell>{langPackLabel("txtComment") || "Comment"}</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {pastRequests.map((req) => (
-                      <TableRow key={req.id} hover>
-                        <TableCell>{req.user?.full_name ?? 'Unknown'}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={req.user?.role ?? 'staff'}
-                            size="small"
-                            variant="outlined"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {req.leave_type ? (
-                            <Chip
-                              label={req.leave_type.name}
-                              size="small"
-                              sx={{ backgroundColor: req.leave_type.color_code, color: '#fff' }}
-                            />
-                          ) : 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                          {new Date(req.start_date).toLocaleDateString()} – {new Date(req.end_date).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          {new Date(req.created_at).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={req.status}
-                            size="small"
-                            color={req.status === 'approved' ? 'success' : 'error'}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {req.approved_at ? new Date(req.approved_at).toLocaleDateString() : '—'}
-                        </TableCell>
-                        <TableCell>
-                          <Tooltip title={req.approval_comment || ''} arrow>
-                            <Typography
-                              variant="body2"
-                              sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                            >
-                              {req.approval_comment || '—'}
-                            </Typography>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
+            ) : (() => {
+              const filtered = pastRequests.filter((r) =>
+                !pastSearch ||
+                (r.user?.full_name || '').toLowerCase().includes(pastSearch.toLowerCase()) ||
+                (r.leave_type?.name || '').toLowerCase().includes(pastSearch.toLowerCase()) ||
+                r.status.toLowerCase().includes(pastSearch.toLowerCase()) ||
+                (r.approval_comment || '').toLowerCase().includes(pastSearch.toLowerCase())
+              );
+              const paginated = filtered.slice(pastPage * pastRowsPerPage, pastPage * pastRowsPerPage + pastRowsPerPage);
+              return (
+                <>
+                  <TableContainer>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>{langPackLabel("txtEmployee") || "Employee"}</TableCell>
+                          <TableCell>{langPackLabel("txtLeaveType") || "Leave Type"}</TableCell>
+                          <TableCell>{langPackLabel("txtDates") || "Dates"}</TableCell>
+                          <TableCell>{langPackLabel("txtDecision") || "Decision"}</TableCell>
+                          <TableCell>{langPackLabel("txtApprovalDate") || "Approval Date"}</TableCell>
+                          <TableCell>{langPackLabel("txtApprovedBy") || "Approved By"}</TableCell>
+                          <TableCell>{langPackLabel("txtComment") || "Comment"}</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {paginated.map((req) => (
+                          <TableRow key={req.id} hover>
+                            <TableCell><Typography variant="body2">{req.user?.full_name ?? 'Unknown'}</Typography></TableCell>
+                            <TableCell>{req.leave_type ? <Chip label={req.leave_type.name} size="small" sx={{ backgroundColor: req.leave_type.color_code, color: '#fff' }} /> : 'N/A'}</TableCell>
+                            <TableCell><Typography variant="body2">{formatLocalDate(req.start_date, language)} – {formatLocalDate(req.end_date, language)}</Typography></TableCell>
+                            <TableCell><Chip label={localizedStatus(req.status, langPackLabel)} size="small" color={req.status === 'approved' ? 'success' : 'error'} /></TableCell>
+                            <TableCell><Typography variant="body2">{formatLocalDate(req.approved_at, language)}</Typography></TableCell>
+                            <TableCell><Typography variant="body2">{(req as any).approved_by_user?.full_name || '—'}</Typography></TableCell>
+                            <TableCell>
+                              <Tooltip title={req.approval_comment || ''} arrow>
+                                <Typography variant="body2" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{req.approval_comment || '—'}</Typography>
+                              </Tooltip>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                  <TablePagination
+                    component="div" count={filtered.length} page={pastPage}
+                    onPageChange={(_, p) => setPastPage(p)} rowsPerPage={pastRowsPerPage}
+                    onRowsPerPageChange={(e) => { setPastRowsPerPage(parseInt(e.target.value, 10)); setPastPage(0); }}
+                    rowsPerPageOptions={[10, 25, 50]}
+                  />
+                </>
+              );
+            })()}
           </Paper>
         </Collapse>
       </Box>

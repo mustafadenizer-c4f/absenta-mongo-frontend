@@ -86,8 +86,10 @@ export const OrganizationService = {
     return data;
   },
 
-  async updateDepartment(id: string, name: string): Promise<Department> {
-    const data = await apiClient.put<Department>(`/departments/${id}`, { name });
+  async updateDepartment(id: string, name: string, groupId?: string): Promise<Department> {
+    const body: any = { name };
+    if (groupId !== undefined) body.group_id = groupId;
+    const data = await apiClient.put<Department>(`/departments/${id}`, body);
     return data;
   },
 
@@ -112,8 +114,10 @@ export const OrganizationService = {
     return data;
   },
 
-  async updateTeam(id: string, name: string): Promise<Team> {
-    const data = await apiClient.put<Team>(`/teams/${id}`, { name });
+  async updateTeam(id: string, name: string, departmentId?: string): Promise<Team> {
+    const body: any = { name };
+    if (departmentId !== undefined) body.department_id = departmentId;
+    const data = await apiClient.put<Team>(`/teams/${id}`, body);
     return data;
   },
 

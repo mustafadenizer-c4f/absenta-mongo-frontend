@@ -98,7 +98,7 @@ const Teams: React.FC = () => {
     e.preventDefault();
     try {
       if (editingTeam) {
-        await dispatch(updateTeam({ id: editingTeam.id, name })).unwrap();
+        await dispatch(updateTeam({ id: editingTeam.id, name, departmentId: departmentId || undefined })).unwrap();
       } else {
         await dispatch(createTeam({ name, departmentId: departmentId || undefined, companyId: currentUser?.company_id })).unwrap();
       }
@@ -145,13 +145,13 @@ const Teams: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600 }}>
           {langPackLabel("txtTeamsManagement") || "Teams Management"}
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button variant="outlined" startIcon={<Refresh />} onClick={handleRefresh}>{langPackLabel("txtRefresh") || "Refresh"}</Button>
-          <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenDialog()}>{langPackLabel("txtAddTeam") || "Add Team"}</Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button variant="outlined" size="small" startIcon={<Refresh />} onClick={handleRefresh}>{langPackLabel("txtRefresh") || "Refresh"}</Button>
+          <Button variant="contained" size="small" startIcon={<Add />} onClick={() => handleOpenDialog()}>{langPackLabel("txtAddTeam") || "Add Team"}</Button>
         </Box>
       </Box>
 
@@ -218,7 +218,7 @@ const Teams: React.FC = () => {
           <DialogContent>
             <TextField autoFocus margin="dense" label={langPackLabel("txtTeamName") || "Team Name"} fullWidth required value={name} onChange={(e) => setName(e.target.value)} />
             {showGroupColumn && (
-              <FormControl fullWidth margin="dense" required disabled={!!editingTeam}>
+              <FormControl fullWidth margin="dense" required>
                 <InputLabel>{langPackLabel("txtGroup") || "Group"}</InputLabel>
                 <Select value={dialogGroupId} label="Group" onChange={(e) => {
                   setDialogGroupId(e.target.value);
@@ -229,7 +229,7 @@ const Teams: React.FC = () => {
               </FormControl>
             )}
             {showDeptColumn && (
-              <FormControl fullWidth margin="dense" required disabled={!!editingTeam || (showGroupColumn && !dialogGroupId)}>
+              <FormControl fullWidth margin="dense" required disabled={showGroupColumn && !dialogGroupId}>
                 <InputLabel>{langPackLabel("txtDepartment") || "Department"}</InputLabel>
                 <Select value={departmentId} label="Department" onChange={(e) => setDepartmentId(e.target.value)}>
                   {dialogDepartments.map((d) => <MenuItem key={d.id} value={d.id}>{d.name}</MenuItem>)}

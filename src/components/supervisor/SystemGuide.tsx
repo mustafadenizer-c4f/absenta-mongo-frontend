@@ -36,7 +36,7 @@ const Code: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 const SystemGuide: React.FC = () => {
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 1, color: 'primary.main', fontWeight: 600 }}>
+      <Typography variant="h5" sx={{ mb: 1, color: 'primary.main', fontWeight: 600 }}>
         System Manual
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>

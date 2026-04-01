@@ -25,6 +25,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { apiClient } from '../../../config/api';
 import { LeaveRequest, Team } from '../../../types';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { localizedStatus } from '../../../utils/localize';
 
 const statusColor: Record<string, 'default' | 'warning' | 'success' | 'error' | 'info'> = {
   pending: 'warning',
@@ -135,7 +136,7 @@ const DepartmentManagerLeaveView: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
+      <Typography variant="h5" sx={{ mb: 3, color: 'primary.main', fontWeight: 600 }}>
         Leave Requests
       </Typography>
 
@@ -221,7 +222,7 @@ const DepartmentManagerLeaveView: React.FC = () => {
                       <TableCell>{req.total_days}</TableCell>
                       <TableCell>
                         <Chip
-                          label={req.status}
+                          label={localizedStatus(req.status, langPackLabel)}
                           size="small"
                           color={statusColor[req.status] ?? 'default'}
                         />

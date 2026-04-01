@@ -19,6 +19,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   Chip,
   IconButton,
   CircularProgress,
@@ -35,6 +36,7 @@ import {
   Card,
   CardContent,
   Divider,
+  InputAdornment,
 } from '@mui/material';
 import {
   Edit,
@@ -42,8 +44,10 @@ import {
   Refresh,
   PersonAdd,
   LockReset,
+  Search,
 } from '@mui/icons-material';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import LocalizedDatePicker from '../../common/LocalizedDatePicker';
 
 const ROLE_LABELS: Record<UserRole, string> = {
   staff: 'Staff',
@@ -68,6 +72,12 @@ interface UserFormData {
   full_name: string;
   phone: string;
   hire_date: string;
+  birth_date: string;
+  sex: string;
+  address: string;
+  city: string;
+  country: string;
+  job_title: string;
   role: UserRole;
   group_id: string;
   department_id: string;
@@ -88,7 +98,9 @@ const Users: React.FC = () => {
   const [showInstructions, setShowInstructions] = useState(false);
   const [newUserPassword, setNewUserPassword] = useState('Pp123456');
   const [initialAnnualBalance, setInitialAnnualBalance] = useState<string>('');
-
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(15);
   // Organization data — scoped to admin's company
   const [groups, setGroups] = useState<Group[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -99,6 +111,12 @@ const Users: React.FC = () => {
     full_name: '',
     phone: '',
     hire_date: new Date().toISOString().split('T')[0],
+    birth_date: '',
+    sex: '',
+    address: '',
+    city: '',
+    country: '',
+    job_title: '',
     role: 'staff',
     group_id: '',
     department_id: '',
@@ -241,18 +259,14 @@ const Users: React.FC = () => {
     if (approverRoles.length === 1 && approverRoles[0] === 'admin') {
       return candidates;
     }
-    // Scope by org level
-    if (formData.team_id) {
-      const scoped = candidates.filter((m) => m.team_id === formData.team_id);
-      // Fall back to admins if no scoped managers found (e.g. flat hierarchy, first user)
+    // Scope by org level — but always fall back to all candidates if scoping yields empty
+    if (formData.department_id && (hp === 'groups' || hp === 'departments')) {
+      const scoped = candidates.filter((m) => m.department_id === formData.department_id);
       if (scoped.length > 0) candidates = scoped;
-      else candidates = candidates.filter((m) => m.role === 'admin' || !formData.team_id);
     }
-    if ((hp === 'groups' || hp === 'departments') && formData.department_id) {
-      candidates = candidates.filter((m) => m.department_id === formData.department_id);
-    }
-    if (hp === 'groups' && formData.group_id) {
-      candidates = candidates.filter((m) => m.group_id === formData.group_id);
+    if (formData.group_id && hp === 'groups') {
+      const scoped = candidates.filter((m) => m.group_id === formData.group_id);
+      if (scoped.length > 0) candidates = scoped;
     }
     return candidates;
   };
@@ -280,6 +294,12 @@ const Users: React.FC = () => {
         full_name: user.full_name,
         phone: user.phone || '',
         hire_date: user.hire_date ? user.hire_date.split('T')[0] : '',
+        birth_date: user.birth_date ? user.birth_date.split('T')[0] : '',
+        sex: user.sex || '',
+        address: user.address || '',
+        city: user.city || '',
+        country: user.country || '',
+        job_title: user.job_title || '',
         role: user.role || 'staff',
         group_id: user.group_id || '',
         department_id: user.department_id || '',
@@ -305,6 +325,12 @@ const Users: React.FC = () => {
         full_name: '',
         phone: '',
         hire_date: new Date().toISOString().split('T')[0],
+        birth_date: '',
+        sex: '',
+        address: '',
+        city: '',
+        country: '',
+        job_title: '',
         role: 'staff',
         group_id: '',
         department_id: '',
@@ -368,6 +394,12 @@ const Users: React.FC = () => {
           full_name: formData.full_name,
           phone: formData.phone || null,
           hire_date: formData.hire_date,
+          birth_date: formData.birth_date || null,
+          sex: formData.sex || null,
+          address: formData.address || null,
+          city: formData.city || null,
+          country: formData.country || null,
+          job_title: formData.job_title || null,
           role: formData.role,
           company_id: currentUser?.company_id || null,
           group_id: needsGroup(formData.role) ? (formData.group_id || null) : null,
@@ -386,6 +418,12 @@ const Users: React.FC = () => {
           full_name: formData.full_name,
           phone: formData.phone || null,
           hire_date: formData.hire_date,
+          birth_date: formData.birth_date || null,
+          sex: formData.sex || null,
+          address: formData.address || null,
+          city: formData.city || null,
+          country: formData.country || null,
+          job_title: formData.job_title || null,
           role: formData.role,
           group_id: needsGroup(formData.role) ? (formData.group_id || null) : null,
           department_id: needsDepartment(formData.role) ? (formData.department_id || null) : null,
@@ -471,20 +509,22 @@ const Users: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 600 }}>{langPackLabel("txtUserManagement") || "User Management"}</Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
+        <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 600 }}>{langPackLabel("txtUserManagement") || "User Management"}</Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             variant="outlined"
             startIcon={<Refresh />}
             onClick={fetchUsers}
+            size="small"
           >{langPackLabel("txtRefresh") || "Refresh"}</Button>
           <Button
             variant="contained"
             startIcon={<PersonAdd />}
             onClick={() => handleOpenDialog()}
+            size="small"
           >
-            {langPackLabel("txtAddNewUser") || "Add New User"}
+            {langPackLabel("txtAddNewUser") || "Add User"}
           </Button>
         </Box>
       </Box>
@@ -496,48 +536,34 @@ const Users: React.FC = () => {
       )}
 
       {/* Stats Cards */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 4 }}>
-        <Card sx={{ flex: '1 1 200px', minWidth: '200px' }}>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 1 }}>{langPackLabel("txtTotalUsers") || "Total Users"}</Typography>
-            <Typography variant="h4" color="primary">
-              {stats.totalUsers}
-            </Typography>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ flex: '1 1 200px', minWidth: '200px' }}>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 1 }}>{langPackLabel("txtAdmins") || "Admins"}</Typography>
-            <Typography variant="h4" color="secondary">
-              {stats.admins}
-            </Typography>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ flex: '1 1 200px', minWidth: '200px' }}>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 1 }}>{langPackLabel("txtPendingReset") || "Pending Reset"}</Typography>
-            <Typography variant="h4" color="warning.main">
-              {stats.pendingPasswordReset}
-            </Typography>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ flex: '1 1 200px', minWidth: '200px' }}>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 1 }}>{langPackLabel("txtIncomplete") || "Incomplete"}</Typography>
-            <Typography variant="h4" color="error.main">
-              {stats.incompleteProfiles}
-            </Typography>
-          </CardContent>
-        </Card>
+      {/* Stats Cards */}
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 3 }}>
+        {[
+          { label: langPackLabel("txtTotalUsers") || "Total", value: stats.totalUsers, color: 'primary.main' },
+          { label: langPackLabel("txtAdmins") || "Admins", value: stats.admins, color: 'secondary.main' },
+          { label: langPackLabel("txtPendingReset") || "Pending Reset", value: stats.pendingPasswordReset, color: 'warning.main' },
+          { label: langPackLabel("txtIncomplete") || "Incomplete", value: stats.incompleteProfiles, color: 'error.main' },
+        ].map((s, i) => (
+          <Card key={i} sx={{ flex: '1 1 130px', minWidth: 110 }}>
+            <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1.5, px: 2, '&:last-child': { pb: 1.5 } }}>
+              <Typography variant="h5" sx={{ fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.value}</Typography>
+              <Typography variant="caption" color="text.secondary">{s.label}</Typography>
+            </CardContent>
+          </Card>
+        ))}
       </Box>
+
+      {/* Search */}
+      <TextField
+        size="small" fullWidth placeholder={langPackLabel("txtSearch") || "Search users…"}
+        value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }} sx={{ mb: 2 }}
+        InputProps={{ startAdornment: <InputAdornment position="start"><Search /></InputAdornment> }}
+      />
 
       {/* Users Table */}
       <Paper sx={{ mb: 3 }}>
         <TableContainer>
-          <Table>
+          <Table size="small">
             <TableHead>
               <TableRow>
                 <TableCell><strong>{langPackLabel("txtUser") || "User"}</strong></TableCell>
@@ -545,18 +571,27 @@ const Users: React.FC = () => {
                 <TableCell><strong>{langPackLabel("txtRole") || "Role"}</strong></TableCell>
                 <TableCell><strong>{langPackLabel("txtStatus") || "Status"}</strong></TableCell>
                 <TableCell><strong>{langPackLabel("txtHireDate") || "Hire Date"}</strong></TableCell>
+                <TableCell><strong>{langPackLabel("txtLastLogin") || "Last Login"}</strong></TableCell>
                 <TableCell><strong>{langPackLabel("txtActions") || "Actions"}</strong></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {users.map((user) => (
+              {(() => {
+                const filtered = users.filter((u) =>
+                  !searchQuery ||
+                  u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  u.role.toLowerCase().includes(searchQuery.toLowerCase())
+                );
+                const paginated = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+                return paginated.map((user) => (
                 <TableRow key={user.id} hover>
                   <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Box
                         sx={{
-                          width: 40,
-                          height: 40,
+                          width: 30,
+                          height: 30,
                           borderRadius: '50%',
                           bgcolor: 'primary.main',
                           color: 'white',
@@ -564,12 +599,13 @@ const Users: React.FC = () => {
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontWeight: 'bold',
+                          fontSize: 12,
                         }}
                       >
                         {user.full_name?.charAt(0).toUpperCase() || 'U'}
                       </Box>
                       <Box>
-                        <Typography fontWeight="medium">
+                        <Typography variant="body2" fontWeight="medium">
                           {user.full_name || 'Unnamed User'}
                         </Typography>
                         <Typography variant="body2" color="textSecondary">
@@ -610,6 +646,11 @@ const Users: React.FC = () => {
                     {new Date(user.hire_date).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
+                    <Typography variant="caption" color="text.secondary">
+                      {user.last_login ? new Date(user.last_login).toLocaleDateString() + ' ' + new Date(user.last_login).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       <IconButton
                         size="small"
@@ -638,219 +679,279 @@ const Users: React.FC = () => {
                     </Box>
                   </TableCell>
                 </TableRow>
-              ))}
+              ));
+              })()}
             </TableBody>
           </Table>
         </TableContainer>
+        <TablePagination
+          component="div"
+          count={users.filter((u) => !searchQuery || u.full_name.toLowerCase().includes(searchQuery.toLowerCase()) || u.email.toLowerCase().includes(searchQuery.toLowerCase()) || u.role.toLowerCase().includes(searchQuery.toLowerCase())).length}
+          page={page}
+          onPageChange={(_e, p) => setPage(p)}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+          rowsPerPageOptions={[10, 15, 25, 50]}
+        />
       </Paper>
 
       {/* Create/Edit User Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ pb: 1 }}>
           {editingUser ? (langPackLabel("txtEditUserProfile") || 'Edit User Profile') : (langPackLabel("txtCreateNewUser") || 'Create New User')}
         </DialogTitle>
         <form onSubmit={handleSubmit}>
-          <DialogContent>
+          <DialogContent sx={{ pt: 1 }}>
             {!editingUser && (
-              <>
+              <Box sx={{ display: 'flex', gap: 2, mb: 1.5 }}>
                 <TextField
                   autoFocus
-                  margin="dense"
+                  size="small"
                   label={langPackLabel("txtEmailAddress") || "Email Address"}
                   type="email"
                   fullWidth
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  sx={{ mb: 2 }}
                 />
                 <TextField
-                  margin="dense"
+                  size="small"
                   label={langPackLabel("txtPassword") || "Password"}
                   type="text"
                   fullWidth
                   required
                   value={newUserPassword}
                   onChange={(e) => setNewUserPassword(e.target.value)}
-                  sx={{ mb: 2 }}
-                  helperText={langPackLabel("txtDefaultPasswordHelper") || "Default: Pp123456 — user will be asked to change on first login"}
+                  helperText={langPackLabel("txtDefaultPasswordHelper") || "Default: Pp123456"}
                 />
-              </>
+              </Box>
             )}
 
-            <TextField
-              autoFocus={!!editingUser}
-              margin="dense"
-              label={langPackLabel("txtFullName") || "Full Name"}
-              type="text"
-              fullWidth
-              required
-              value={formData.full_name}
-              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-              sx={{ mb: 2 }}
-            />
+            <Box sx={{ display: 'flex', gap: 2, mb: 1.5 }}>
+              <TextField
+                autoFocus={!!editingUser}
+                size="small"
+                label={langPackLabel("txtFullName") || "Full Name"}
+                type="text"
+                fullWidth
+                required
+                value={formData.full_name}
+                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+              />
+              <TextField
+                size="small"
+                label={langPackLabel("txtJobTitle") || "Job Title"}
+                type="text"
+                fullWidth
+                value={formData.job_title}
+                onChange={(e) => setFormData({ ...formData, job_title: e.target.value })}
+              />
+            </Box>
 
             {editingUser && (
-              <TextField
-                margin="dense"
-                label={langPackLabel("txtEmailAddress") || "Email Address"}
-                type="email"
-                fullWidth
-                disabled
-                value={formData.email}
-                sx={{ mb: 2 }}
-                helperText={langPackLabel("txtEmailCannotChange") || "Email cannot be changed"}
-              />
+              <Box sx={{ mb: 1.5 }}>
+                <TextField
+                  size="small"
+                  label={langPackLabel("txtEmailAddress") || "Email Address"}
+                  type="email"
+                  fullWidth
+                  disabled
+                  value={formData.email}
+                />
+              </Box>
             )}
 
-            <TextField
-              margin="dense"
-              label={langPackLabel("txtPhone") || "Phone Number"}
-              type="tel"
-              fullWidth
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              sx={{ mb: 2 }}
-            />
+            <Box sx={{ display: 'flex', gap: 2, mb: 1.5 }}>
+              <TextField
+                size="small"
+                label={langPackLabel("txtPhone") || "Phone"}
+                type="tel"
+                fullWidth
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+              <LocalizedDatePicker
+                label={langPackLabel("txtBirthDate") || "Birth Date"}
+                value={formData.birth_date}
+                onChange={(v) => setFormData({ ...formData, birth_date: v })}
+                size="small"
+                fullWidth
+              />
+              <FormControl fullWidth size="small">
+                <InputLabel>{langPackLabel("txtSex") || "Sex"}</InputLabel>
+                <Select
+                  value={formData.sex}
+                  label={langPackLabel("txtSex") || "Sex"}
+                  onChange={(e) => setFormData({ ...formData, sex: e.target.value })}
+                >
+                  <MenuItem value=""><em>{langPackLabel("txtNone") || "None"}</em></MenuItem>
+                  <MenuItem value="male">{langPackLabel("txtMale") || "Male"}</MenuItem>
+                  <MenuItem value="female">{langPackLabel("txtFemale") || "Female"}</MenuItem>
+                  <MenuItem value="other">{langPackLabel("txtOther") || "Other"}</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
 
-            <TextField
-              margin="dense"
-              label={langPackLabel("txtHireDate") || "Hire Date"}
-              type="date"
-              fullWidth
-              required
-              value={formData.hire_date}
-              onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
-              InputLabelProps={{ shrink: true }}
-              sx={{ mb: 3 }}
-            />
+            <Box sx={{ mb: 1.5 }}>
+              <TextField
+                size="small"
+                label={langPackLabel("txtAddress") || "Address"}
+                type="text"
+                fullWidth
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              />
+            </Box>
 
-            {!editingUser && (
-              <>
+            <Box sx={{ display: 'flex', gap: 2, mb: 1.5 }}>
+              <TextField
+                size="small"
+                label={langPackLabel("txtCity") || "City"}
+                type="text"
+                fullWidth
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+              />
+              <TextField
+                size="small"
+                label={langPackLabel("txtCountry") || "Country"}
+                type="text"
+                fullWidth
+                value={formData.country}
+                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+              />
+            </Box>
+
+            <Box sx={{ display: 'flex', gap: 2, mb: 1.5 }}>
+              <LocalizedDatePicker
+                label={langPackLabel("txtHireDate") || "Hire Date"}
+                value={formData.hire_date}
+                onChange={(v) => setFormData({ ...formData, hire_date: v })}
+                size="small"
+                fullWidth
+                required
+              />
+              {!editingUser && (
                 <TextField
-                  margin="dense"
+                  size="small"
                   label={langPackLabel("txtAnnualLeaveCarryover") || "Annual Leave Carryover (days)"}
                   type="number"
                   fullWidth
                   value={initialAnnualBalance}
                   onChange={(e) => setInitialAnnualBalance(e.target.value)}
-                  sx={{ mb: 2 }}
-                  helperText={langPackLabel("txtCarryoverHelperText") || "Remaining annual leave from previous system. Use negative for deficit."}
+                  helperText={langPackLabel("txtCarryoverHelperText") || "From previous system. Negative for deficit."}
                   slotProps={{ htmlInput: { step: 0.5 } }}
                 />
-              </>
-            )}
+              )}
+            </Box>
 
-            <Divider sx={{ mb: 2 }} />
-            <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
+            <Divider sx={{ my: 1.5 }} />
+            <Typography variant="subtitle2" sx={{ mb: 1.5, color: 'text.secondary' }}>
               {langPackLabel("txtRoleAndOrganization") || "Role & Organization"}
             </Typography>
 
-            {/* Role Select - filtered by hierarchy */}
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>{langPackLabel("txtRole") || "Role"}</InputLabel>
-              <Select
-                value={formData.role}
-                label={langPackLabel("txtRole") || "Role"}
-                onChange={(e) => {
-                  const newRole = e.target.value as UserRole;
-                  setFormData((prev) => ({
-                    ...prev,
-                    role: newRole,
-                    // Clear fields not needed for the new role
-                    group_id: needsGroup(newRole) ? prev.group_id : '',
-                    department_id: needsDepartment(newRole) ? prev.department_id : '',
-                    team_id: needsTeam(newRole) ? prev.team_id : '',
-                    manager_id: newRole !== 'admin' && newRole !== 'supervisor' ? '' : '',
-                  }));
-                }}
-                required
-              >
-                <MenuItem value="staff">{langPackLabel("txtStaff") || "Staff"}</MenuItem>
-                {hp !== 'flat' && <MenuItem value="manager">{langPackLabel("txtManager") || "Manager"}</MenuItem>}
-                {(hp === 'departments' || hp === 'groups') && <MenuItem value="department_manager">{langPackLabel("txtDeptManagers") || "Department Manager"}</MenuItem>}
-                {hp === 'groups' && <MenuItem value="group_manager">{langPackLabel("txtGroupManagers") || "Group Manager"}</MenuItem>}
-                <MenuItem value="admin">{langPackLabel("txtAdmins") || "Admin"}</MenuItem>
-              </Select>
-            </FormControl>
-
-            {/* Group Dropdown - shown for group_manager, department_manager, manager, staff */}
-            {needsGroup(formData.role) && (
-              <FormControl fullWidth sx={{ mb: 2 }} required>
-                <InputLabel>{langPackLabel("txtGroup") || "Group"} *</InputLabel>
+            <Box sx={{ display: 'flex', gap: 2, mb: 1.5 }}>
+              {/* Role Select - filtered by hierarchy */}
+              <FormControl fullWidth size="small">
+                <InputLabel>{langPackLabel("txtRole") || "Role"}</InputLabel>
                 <Select
-                  value={formData.group_id}
-                  label={`${langPackLabel("txtGroup") || "Group"} *`}
-                  onChange={(e) => handleGroupChange(e.target.value as string)}
+                  value={formData.role}
+                  label={langPackLabel("txtRole") || "Role"}
+                  onChange={(e) => {
+                    const newRole = e.target.value as UserRole;
+                    setFormData((prev) => ({
+                      ...prev,
+                      role: newRole,
+                      group_id: needsGroup(newRole) ? prev.group_id : '',
+                      department_id: needsDepartment(newRole) ? prev.department_id : '',
+                      team_id: needsTeam(newRole) ? prev.team_id : '',
+                      manager_id: newRole !== 'admin' && newRole !== 'supervisor' ? '' : '',
+                    }));
+                  }}
                   required
                 >
-                  {groups.map((group) => (
-                    <MenuItem key={group.id} value={group.id}>
-                      {group.name}
-                    </MenuItem>
-                  ))}
+                  <MenuItem value="staff">{langPackLabel("txtStaff") || "Staff"}</MenuItem>
+                  {hp !== 'flat' && <MenuItem value="manager">{langPackLabel("txtManager") || "Manager"}</MenuItem>}
+                  {(hp === 'departments' || hp === 'groups') && <MenuItem value="department_manager">{langPackLabel("txtDeptManagers") || "Department Manager"}</MenuItem>}
+                  {hp === 'groups' && <MenuItem value="group_manager">{langPackLabel("txtGroupManagers") || "Group Manager"}</MenuItem>}
+                  <MenuItem value="admin">{langPackLabel("txtAdmins") || "Admin"}</MenuItem>
                 </Select>
               </FormControl>
-            )}
 
-            {/* Department Dropdown - shown for department_manager, manager, staff when hierarchy includes departments */}
-            {needsDepartment(formData.role) && (
-              <FormControl fullWidth sx={{ mb: 2 }} disabled={hp === 'groups' && !formData.group_id} required>
-                <InputLabel>{langPackLabel("txtDepartment") || "Department"} *</InputLabel>
-                <Select
-                  value={formData.department_id}
-                  label={`${langPackLabel("txtDepartment") || "Department"} *`}
-                  onChange={(e) => setFormData({ ...formData, department_id: e.target.value as string })}
-                  required
-                >
-                  {departments.map((dept) => (
-                    <MenuItem key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
-
-            {/* Team Dropdown - shown for manager, staff */}
-            {needsTeam(formData.role) && (
-              <FormControl fullWidth sx={{ mb: 2 }} disabled={(hp === 'groups' || hp === 'departments') && !formData.department_id} required>
-                <InputLabel>{langPackLabel("txtTeam") || "Team"} *</InputLabel>
-                <Select
-                  value={formData.team_id}
-                  label={`${langPackLabel("txtTeam") || "Team"} *`}
-                  onChange={(e) => setFormData({ ...formData, team_id: e.target.value as string })}
-                  required
-                >
-                  {teams.map((team) => (
-                    <MenuItem key={team.id} value={team.id}>
-                      {team.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
-
-            {/* Manager Dropdown - shown for all non-admin roles */}
-            {needsManager(formData.role) && (
-              <FormControl fullWidth sx={{ mb: 2 }} required>
-                <InputLabel>{langPackLabel("txtAssignedManager") || "Assigned Manager"} *</InputLabel>
-                <Select
-                  value={formData.manager_id}
-                  label={`${langPackLabel("txtAssignedManager") || "Assigned Manager"} *`}
-                  onChange={(e) => setFormData({ ...formData, manager_id: e.target.value as string })}
-                  required
-                >
-                  {filteredManagers
-                    .filter((m) => m.id !== editingUser?.id)
-                    .map((manager) => (
-                      <MenuItem key={manager.id} value={manager.id}>
-                        {manager.full_name || manager.email}
-                      </MenuItem>
+              {/* Group Dropdown */}
+              {needsGroup(formData.role) && (
+                <FormControl fullWidth size="small" required>
+                  <InputLabel>{langPackLabel("txtGroup") || "Group"} *</InputLabel>
+                  <Select
+                    value={formData.group_id}
+                    label={`${langPackLabel("txtGroup") || "Group"} *`}
+                    onChange={(e) => handleGroupChange(e.target.value as string)}
+                    required
+                  >
+                    {groups.map((group) => (
+                      <MenuItem key={group.id} value={group.id}>{group.name}</MenuItem>
                     ))}
-                </Select>
-              </FormControl>
-            )}
+                  </Select>
+                </FormControl>
+              )}
+            </Box>
+
+            <Box sx={{ display: 'flex', gap: 2, mb: 1.5 }}>
+              {/* Department Dropdown */}
+              {needsDepartment(formData.role) && (
+                <FormControl fullWidth size="small" disabled={hp === 'groups' && !formData.group_id} required>
+                  <InputLabel>{langPackLabel("txtDepartment") || "Department"} *</InputLabel>
+                  <Select
+                    value={formData.department_id}
+                    label={`${langPackLabel("txtDepartment") || "Department"} *`}
+                    onChange={(e) => setFormData({ ...formData, department_id: e.target.value as string })}
+                    required
+                  >
+                    {departments.map((dept) => (
+                      <MenuItem key={dept.id} value={dept.id}>{dept.name}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+
+              {/* Team Dropdown */}
+              {needsTeam(formData.role) && (
+                <FormControl fullWidth size="small" disabled={(hp === 'groups' || hp === 'departments') && !formData.department_id} required>
+                  <InputLabel>{langPackLabel("txtTeam") || "Team"} *</InputLabel>
+                  <Select
+                    value={formData.team_id}
+                    label={`${langPackLabel("txtTeam") || "Team"} *`}
+                    onChange={(e) => setFormData({ ...formData, team_id: e.target.value as string })}
+                    required
+                  >
+                    {teams.map((team) => (
+                      <MenuItem key={team.id} value={team.id}>{team.name}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+
+              {/* Manager Dropdown */}
+              {needsManager(formData.role) && (
+                <FormControl fullWidth size="small" required>
+                  <InputLabel>{langPackLabel("txtAssignedManager") || "Assigned Manager"} *</InputLabel>
+                  <Select
+                    value={formData.manager_id}
+                    label={`${langPackLabel("txtAssignedManager") || "Assigned Manager"} *`}
+                    onChange={(e) => setFormData({ ...formData, manager_id: e.target.value as string })}
+                    required
+                  >
+                    {filteredManagers
+                      .filter((m) => m.id !== editingUser?.id)
+                      .map((manager) => (
+                        <MenuItem key={manager.id} value={manager.id}>
+                          {manager.full_name || manager.email}
+                        </MenuItem>
+                      ))}
+                  </Select>
+                </FormControl>
+              )}
+            </Box>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseDialog}>{langPackLabel("txtCancel") || "Cancel"}</Button>

@@ -1,44 +1,33 @@
-// src/components/admin/Dashboard.tsx - MUI COMPATIBLE VERSION
+// src/components/admin/Dashboard.tsx
 import React, { useEffect, useState } from "react";
 import { useAutoClearing } from "../../hooks/useAutoClearing";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
 import { UsersService } from "../../services/users";
+import { LeaveService } from "../../services/leave";
 import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  CircularProgress,
-  Alert,
-  Card,
-  CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
+  Box, Typography, Paper, Button, CircularProgress, Alert,
+  Card, CardContent, Table, TableBody, TableCell, TableContainer,
+  TableHead, TableRow, Chip,
 } from "@mui/material";
-import {
-  People,
-  AdminPanelSettings,
-  ManageAccounts,
-  Person,
-  Refresh,
-} from "@mui/icons-material";
+import { People, ManageAccounts, Person, Refresh, BeachAccess } from "@mui/icons-material";
 import { useLanguage } from "../../contexts/LanguageContext";
+import { localizedLeaveTypeName } from "../../utils/localize";
 
 const AdminDashboard: React.FC = () => {
-  const { langPackLabel } = useLanguage();
+  const { langPackLabel, language } = useLanguage();
   const { user: currentUser } = useSelector((state: RootState) => state.auth);
+  const { hierarchyProfile } = useSelector((state: RootState) => state.organization);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useAutoClearing(7000);
+  const [onLeaveToday, setOnLeaveToday] = useState<any[]>([]);
+
+  const hp = hierarchyProfile || 'flat';
 
   useEffect(() => {
     fetchUsers();
+    fetchTeamAvailability();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchUsers = async () => {
@@ -46,388 +35,122 @@ const AdminDashboard: React.FC = () => {
       setLoading(true);
       const data = await UsersService.getAll(currentUser?.company_id);
       setUsers(data || []);
-    } catch (err : any) {
-      setError(err.message);
-      console.error("Error fetching users:", err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err: any) { setError(err.message); }
+    finally { setLoading(false); }
   };
 
-  const stats = {
-    totalUsers: users.length,
-    admins: users.filter((u) => u.role === 'admin').length,
-    generalManagers: users.filter((u) => u.role === 'department_manager').length,
-    groupManagers: users.filter((u) => u.role === 'group_manager').length,
-    managers: users.filter((u) => u.role === 'manager').length,
-    staff: users.filter((u) => u.role === 'staff').length,
-    pendingPasswordReset: users.filter((u) => u.requires_password_change)
-      .length,
+  const fetchTeamAvailability = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data } = await LeaveService.getTeamRequests({ status: 'approved', startDate: today, endDate: today });
+      setOnLeaveToday(data || []);
+    } catch {}
   };
 
-  if (loading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="400px"
-      >
-        <CircularProgress />
-      </Box>
-    );
+  // Build stat cards based on hierarchy
+  const statCards: { label: string; value: number; color: string; icon: React.ReactNode }[] = [
+    { label: langPackLabel("txtTotalUsers") || "Total", value: users.length, color: "primary.main", icon: <People fontSize="small" /> },
+  ];
+
+  if (hp === 'groups') {
+    statCards.push({ label: langPackLabel("txtGroupManagers") || "Grp Mgrs", value: users.filter((u) => u.role === 'group_manager').length, color: "warning.main", icon: <ManageAccounts fontSize="small" /> });
+    statCards.push({ label: langPackLabel("txtDeptManagers") || "Dept Mgrs", value: users.filter((u) => u.role === 'department_manager').length, color: "info.main", icon: <ManageAccounts fontSize="small" /> });
+    statCards.push({ label: langPackLabel("txtManagers") || "Managers", value: users.filter((u) => u.role === 'manager').length, color: "secondary.main", icon: <ManageAccounts fontSize="small" /> });
+  } else if (hp === 'departments') {
+    statCards.push({ label: langPackLabel("txtDeptManagers") || "Dept Mgrs", value: users.filter((u) => u.role === 'department_manager').length, color: "info.main", icon: <ManageAccounts fontSize="small" /> });
+    statCards.push({ label: langPackLabel("txtManagers") || "Managers", value: users.filter((u) => u.role === 'manager').length, color: "secondary.main", icon: <ManageAccounts fontSize="small" /> });
+  } else if (hp === 'teams') {
+    statCards.push({ label: langPackLabel("txtManagers") || "Managers", value: users.filter((u) => u.role === 'manager').length, color: "secondary.main", icon: <ManageAccounts fontSize="small" /> });
   }
 
-  if (error) {
-    return (
-      <Alert severity="error" sx={{ mb: 3 }}>
-        {error}
-        <Button onClick={fetchUsers} sx={{ ml: 2 }}>
-          Retry
-        </Button>
-      </Alert>
-    );
-  }
+  statCards.push({ label: langPackLabel("txtStaff") || "Staff", value: users.filter((u) => u.role === 'staff').length, color: "success.main", icon: <Person fontSize="small" /> });
+  statCards.push({ label: langPackLabel("txtOnLeaveToday") || "On Leave", value: onLeaveToday.length, color: "error.main", icon: <BeachAccess fontSize="small" /> });
+
+  if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px"><CircularProgress /></Box>;
+
+  if (error) return <Alert severity="error" sx={{ mb: 3 }}>{error}<Button onClick={fetchUsers} sx={{ ml: 2 }}>Retry</Button></Alert>;
 
   return (
     <Box>
       {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 4,
-        }}
-      >
-        <Typography
-          variant="h4"
-          sx={{ color: "primary.main", fontWeight: 600 }}
-        >
-          {langPackLabel("txtDashboard") || "Admin Dashboard"}
-        </Typography>
-        <Box sx={{ display: "flex", gap: 2 }}>
-          <Button
-            variant="outlined"
-            startIcon={<Refresh />}
-            onClick={fetchUsers}
-          >
-            {langPackLabel("txtRefresh") || "Refresh"}
-          </Button>
-
-        </Box>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexWrap: "wrap", gap: 1 }}>
+        <Typography variant="h5" sx={{ color: "primary.main", fontWeight: 600 }}>{langPackLabel("txtDashboard") || "Dashboard"}</Typography>
+        <Button variant="outlined" startIcon={<Refresh />} onClick={() => { fetchUsers(); fetchTeamAvailability(); }} size="small">{langPackLabel("txtRefresh") || "Refresh"}</Button>
       </Box>
 
       {/* Stats Cards */}
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mb: 4 }}>
-        <Card sx={{ flex: "1 1 200px", minWidth: "200px" }}>
-          <CardContent>
-            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <People color="primary" sx={{ mr: 1 }} />
-              <Typography variant="h6">{langPackLabel("txtTotalUsers") || "Total Users"}</Typography>
-            </Box>
-            <Typography variant="h4" color="primary">
-              {stats.totalUsers}
-            </Typography>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ flex: "1 1 200px", minWidth: "200px" }}>
-          <CardContent>
-            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <AdminPanelSettings color="primary" sx={{ mr: 1 }} />
-              <Typography variant="h6">{langPackLabel("txtAdmins") || "Admins"}</Typography>
-            </Box>
-            <Typography variant="h4" color="secondary">
-              {stats.admins}
-            </Typography>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ flex: "1 1 200px", minWidth: "200px" }}>
-          <CardContent>
-            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <ManageAccounts color="info" sx={{ mr: 1 }} />
-              <Typography variant="h6">{langPackLabel("txtDeptManagers") || "Dept. Managers"}</Typography>
-            </Box>
-            <Typography variant="h4" sx={{ color: "info.main" }}>
-              {stats.generalManagers}
-            </Typography>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ flex: "1 1 200px", minWidth: "200px" }}>
-          <CardContent>
-            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <ManageAccounts sx={{ mr: 1, color: "warning.main" }} />
-              <Typography variant="h6">{langPackLabel("txtGroupManagers") || "Group Managers"}</Typography>
-            </Box>
-            <Typography variant="h4" sx={{ color: "warning.main" }}>
-              {stats.groupManagers}
-            </Typography>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ flex: "1 1 200px", minWidth: "200px" }}>
-          <CardContent>
-            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <ManageAccounts color="info" sx={{ mr: 1 }} />
-              <Typography variant="h6">{langPackLabel("txtManagers") || "Managers"}</Typography>
-            </Box>
-            <Typography variant="h4" sx={{ color: "info.main" }}>
-              {stats.managers}
-            </Typography>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ flex: "1 1 200px", minWidth: "200px" }}>
-          <CardContent>
-            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <Person color="warning" sx={{ mr: 1 }} />
-              <Typography variant="h6">{langPackLabel("txtStaff") || "Staff"}</Typography>
-            </Box>
-            <Typography variant="h4" sx={{ color: "success.main" }}>
-              {stats.staff}
-            </Typography>
-          </CardContent>
-        </Card>
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mb: 3 }}>
+        {statCards.map((s, i) => (
+          <Card key={i} sx={{ flex: "1 1 120px", minWidth: 100 }}>
+            <CardContent sx={{ display: "flex", alignItems: "center", gap: 1, py: 1.5, px: 1.5, "&:last-child": { pb: 1.5 } }}>
+              <Box sx={{ color: s.color }}>{s.icon}</Box>
+              <Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.value}</Typography>
+                <Typography variant="caption" color="text.secondary" noWrap>{s.label}</Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        ))}
       </Box>
 
-      {/* Users Table */}
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-          {langPackLabel("txtAllUsers") || "All Users"}
+      {/* Who's On Leave Today */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
+          {langPackLabel("txtOnLeaveToday") || "On Leave Today"} ({onLeaveToday.length})
         </Typography>
-
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>
-                  <strong>{langPackLabel("txtName") || "Name"}</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>{langPackLabel("txtEmail") || "Email"}</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>{langPackLabel("txtRole") || "Role"}</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>{langPackLabel("txtStatus") || "Status"}</strong>
-                </TableCell>
-                <TableCell>
-                  <strong>{langPackLabel("txtHireDate") || "Hire Date"}</strong>
-                </TableCell>
-
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id} hover>
-                  <TableCell>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      <Box
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: "50%",
-                          bgcolor:
-                            user.id === currentUser?.id
-                              ? "primary.main"
-                              : "secondary.main",
-                          color: "white",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        {user.full_name?.charAt(0).toUpperCase() || "U"}
-                      </Box>
-                      <Box>
-                        <Typography fontWeight="medium">
-                          {user.full_name}
-                          {user.id === currentUser?.id && (
-                            <Chip label="You" size="small" sx={{ ml: 1 }} />
-                          )}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                          ID: {user.id.substring(0, 8)}...
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={
-                        user.role === 'admin'
-                          ? "Admin"
-                          : user.role === 'department_manager'
-                          ? "Dept. Manager"
-                          : user.role === 'group_manager'
-                          ? "Group Manager"
-                          : user.role === 'manager'
-                          ? "Manager"
-                          : "Staff"
-                      }
-                      color={
-                        user.role === 'admin'
-                          ? "primary"
-                          : user.role === 'department_manager'
-                          ? "info"
-                          : user.role === 'group_manager'
-                          ? "warning"
-                          : user.role === 'manager'
-                          ? "secondary"
-                          : "default"
-                      }
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={
-                        user.requires_password_change
-                          ? "Reset Required"
-                          : "Active"
-                      }
-                      color={
-                        user.requires_password_change ? "warning" : "success"
-                      }
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {new Date(user.hire_date).toLocaleDateString()}
-                  </TableCell>
-
+        {onLeaveToday.length > 0 ? (
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>{langPackLabel("txtName") || "Name"}</TableCell>
+                  <TableCell>{langPackLabel("txtType") || "Type"}</TableCell>
+                  <TableCell>{langPackLabel("txtUntil") || "Until"}</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {onLeaveToday.map((req: any) => (
+                  <TableRow key={req.id} hover>
+                    <TableCell><Typography variant="body2">{req.user?.full_name ?? "Unknown"}</Typography></TableCell>
+                    <TableCell><Typography variant="body2">{localizedLeaveTypeName(req.leave_type, language)}</Typography></TableCell>
+                    <TableCell><Typography variant="body2">{new Date(req.end_date).toLocaleDateString()}</Typography></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        ) : (
+          <Chip label={langPackLabel("txtEveryoneAvailable") || "Everyone is available today"} color="success" size="small" />
+        )}
       </Paper>
 
-      {/* Quick Actions */}
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
-        <Card sx={{ flex: "1 1 300px", minWidth: "300px" }}>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-              {langPackLabel("txtQuickActions") || "Quick Actions"}
-            </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Button
-                variant="outlined"
-                startIcon={<People />}
-                onClick={() => (window.location.href = "/admin/users")}
-                fullWidth
-                sx={{ justifyContent: "flex-start" }}
-              >
-                {langPackLabel("txtManageUsers") || "Manage Users"}
-              </Button>
-              <Button
-                variant="outlined"
-                startIcon={<ManageAccounts />}
-                onClick={() => (window.location.href = "/admin/leave-types")}
-                fullWidth
-                sx={{ justifyContent: "flex-start" }}
-              >
-                {langPackLabel("txtManageLeaveTypes") || "Manage Leave Types"}
-              </Button>
-              <Button
-                variant="outlined"
-                startIcon={<Person />}
-                onClick={() => (window.location.href = "/admin/holidays")}
-                fullWidth
-                sx={{ justifyContent: "flex-start" }}
-              >
-                {langPackLabel("txtManageHolidays") || "Manage Holidays"}
-              </Button>
-            </Box>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ flex: "1 1 300px", minWidth: "300px" }}>
-          <CardContent>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-              {langPackLabel("txtSystemInfo") || "System Info"}
-            </Typography>
+      {/* Quick Actions + System Info */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+        <Card sx={{ flex: "1 1 280px", minWidth: 260 }}>
+          <CardContent sx={{ py: 2 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>{langPackLabel("txtQuickActions") || "Quick Actions"}</Typography>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <Typography variant="body2">
-                <strong>{langPackLabel("txtCurrentUser") || "Current User"}:</strong> {currentUser?.full_name}
-              </Typography>
-              <Typography variant="body2">
-                <strong>{langPackLabel("txtRole") || "Role"}:</strong>{" "}
-                {currentUser?.role === 'admin'
-                  ? "Administrator"
-                  : currentUser?.role === 'department_manager'
-                  ? "Department Manager"
-                  : currentUser?.role === 'group_manager'
-                  ? "Group Manager"
-                  : currentUser?.role === 'manager'
-                  ? "Manager"
-                  : "Staff"}
-              </Typography>
-              <Typography variant="body2">
-                <strong>{langPackLabel("txtEmail") || "Email"}:</strong> {currentUser?.email}
-              </Typography>
-              <Typography variant="body2">
-                <strong>{langPackLabel("txtHireDate") || "Hire Date"}:</strong>{" "}
-                {currentUser?.hire_date
-                  ? new Date(currentUser.hire_date).toLocaleDateString()
-                  : "N/A"}
-              </Typography>
-              <Typography variant="body2">
-                <strong>{langPackLabel("txtStatus") || "Status"}:</strong>
-                <Chip
-                  label={
-                    currentUser?.requires_password_change
-                      ? "Password Reset Required"
-                      : "Active"
-                  }
-                  size="small"
-                  color={
-                    currentUser?.requires_password_change
-                      ? "warning"
-                      : "success"
-                  }
-                  sx={{ ml: 1 }}
-                />
-              </Typography>
+              <Button variant="outlined" size="small" startIcon={<People />} onClick={() => (window.location.href = "/admin/users")} fullWidth sx={{ justifyContent: "flex-start" }}>{langPackLabel("txtManageUsers") || "Users"}</Button>
+              <Button variant="outlined" size="small" startIcon={<ManageAccounts />} onClick={() => (window.location.href = "/admin/leave-types")} fullWidth sx={{ justifyContent: "flex-start" }}>{langPackLabel("txtManageLeaveTypes") || "Leave Types"}</Button>
+              <Button variant="outlined" size="small" startIcon={<Person />} onClick={() => (window.location.href = "/admin/holidays")} fullWidth sx={{ justifyContent: "flex-start" }}>{langPackLabel("txtManageHolidays") || "Holidays"}</Button>
             </Box>
-            <Button
-              variant="contained"
-              fullWidth
-              sx={{ mt: 3 }}
-              onClick={() => (window.location.href = "/profile")}
-            >
-              {langPackLabel("txtViewProfile") || "View Profile"}
-            </Button>
           </CardContent>
         </Card>
-      </Box>
 
-      {/* Footer */}
-      <Box
-        sx={{
-          mt: 4,
-          pt: 3,
-          borderTop: 1,
-          borderColor: "divider",
-          textAlign: "center",
-          color: "text.secondary",
-          fontSize: "14px",
-        }}
-      >
-        <Typography variant="body2">
-          Absenta v1.0
-        </Typography>
-        <Typography variant="body2" sx={{ mt: 1 }}>
-          {stats.totalUsers} users • {stats.admins} admins • {stats.generalManagers}{" "}
-          general managers • {stats.groupManagers} group managers • {stats.managers}{" "}
-          managers • {stats.staff} staff
-        </Typography>
+        <Card sx={{ flex: "1 1 280px", minWidth: 260 }}>
+          <CardContent sx={{ py: 2 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>{langPackLabel("txtSystemInfo") || "System Info"}</Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+              <Typography variant="body2"><strong>{langPackLabel("txtCurrentUser") || "User"}:</strong> {currentUser?.full_name}</Typography>
+              <Typography variant="body2"><strong>{langPackLabel("txtEmail") || "Email"}:</strong> {currentUser?.email}</Typography>
+              <Typography variant="body2"><strong>{langPackLabel("txtHierarchy") || "Hierarchy"}:</strong> {hp}</Typography>
+              <Typography variant="body2" component="div">
+                <strong>{langPackLabel("txtStatus") || "Status"}:</strong>
+                <Chip label={currentUser?.requires_password_change ? "Reset Required" : "Active"} size="small" color={currentUser?.requires_password_change ? "warning" : "success"} sx={{ ml: 1 }} />
+              </Typography>
+            </Box>
+          </CardContent>
+        </Card>
       </Box>
     </Box>
   );
