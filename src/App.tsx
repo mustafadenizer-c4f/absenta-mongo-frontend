@@ -25,7 +25,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Admin components
 import AdminDashboard from './components/admin/Dashboard';
-import { LeaveTypes, Users, Holidays, AdminReports, Groups, Departments, Teams, AdminSettings, AdminApprovals, AdminTeamCalendar } from './components/admin';
+import { LeaveTypes, Users, Holidays, AdminReports, Groups, Departments, Teams, AdminSettings, AdminApprovals, AdminTeamCalendar, ImportantDays } from './components/admin';
 import UserGuide from './components/admin/UserGuide';
 import CollectiveLeavePage from './components/admin/CollectiveLeave';
 
@@ -137,6 +137,13 @@ const AppContent: React.FC = () => {
           <ProtectedRoute requireAdmin>
             <Layout>
               <Holidays />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/important-days" element={
+          <ProtectedRoute requireAdmin>
+            <Layout>
+              <ImportantDays />
             </Layout>
           </ProtectedRoute>
         } />

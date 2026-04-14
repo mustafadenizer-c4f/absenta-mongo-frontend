@@ -26,9 +26,11 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 import { RootState, AppDispatch } from '../../store';
 import { fetchHolidays } from '../../store/slices/leaveSlice';
+import { fetchImportantDays } from '../../store/slices/importantDaysSlice';
 import { selectWorkdayConfig } from '../../store/slices/organizationSlice';
 import { apiClient } from '../../config/api';
-import { CalendarEvent, LeaveRequest, Holiday } from '../../types';
+import { CalendarEvent, LeaveRequest, Holiday, ImportantDay } from '../../types';
+import { resolveImportantDays, getLocalizedImportantDayName } from '../../utils/resolveImportantDays';
 import ThreeMonthView from '../common/ThreeMonthView';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { localizedLeaveTypeName, localizedStatus, formatLocalDate } from '../../utils/localize';
@@ -117,6 +119,10 @@ const CalendarLegend: React.FC<{ leaveTypes: { name: string; color: string }[] }
       />
       <Typography variant="caption">{langPackLabel("txtHoliday") || "Holiday"}</Typography>
     </Box>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+      <Box sx={{ width: 14, height: 14, borderRadius: '3px', backgroundColor: '#9C27B0', border: '1px solid #7B1FA2' }} />
+      <Typography variant="caption">{langPackLabel("txtImportantDays") || "Important Days"}</Typography>
+    </Box>
   </Box>
   );
 };
@@ -130,6 +136,7 @@ const CalendarView: React.FC = () => {
   const { holidays, loading: holidayLoading, error } = useSelector(
     (state: RootState) => state.leave,
   );
+  const { items: importantDays } = useSelector((state: RootState) => state.importantDays);
   const workdayConfig = useSelector(selectWorkdayConfig);
 
   const [view, setView] = useState<View>('month');
@@ -180,6 +187,7 @@ const CalendarView: React.FC = () => {
         }
 
         dispatch(fetchHolidays(user.company_id));
+        dispatch(fetchImportantDays(user.company_id));
       } catch (err) {
         console.error('Failed to load calendar data:', err);
       } finally {
@@ -225,8 +233,9 @@ const CalendarView: React.FC = () => {
         };
       });
     const holidayEvents = mapHolidaysToEvents(holidays);
-    return [...myEvents, ...teamEvents, ...holidayEvents];
-  }, [myRequests, teamRequests, holidays]);
+    const importantDayEvents = resolveImportantDays(importantDays, new Date().getFullYear(), language);
+    return [...myEvents, ...teamEvents, ...holidayEvents, ...importantDayEvents];
+  }, [myRequests, teamRequests, holidays, importantDays]);
 
   // Derive unique leave types for legend
   const legendItems = useMemo(() => {
@@ -244,12 +253,13 @@ const CalendarView: React.FC = () => {
   // Style events by their resource color
   const eventPropGetter = useCallback((event: CalendarEvent) => {
     const isHoliday = event.resource.type === 'holiday';
+    const isImportantDay = event.resource.type === 'important_day';
     return {
       style: {
         backgroundColor: event.resource.color,
         color: '#fff',
         borderRadius: '4px',
-        border: isHoliday ? '1px dashed #c0392b' : 'none',
+        border: isHoliday ? '1px dashed #c0392b' : isImportantDay ? `1px solid ${event.resource.color}` : 'none',
         opacity: isHoliday ? 0.85 : 1,
         fontSize: '0.8rem',
       },
@@ -287,6 +297,11 @@ const CalendarView: React.FC = () => {
     const holidayId = selectedEvent.id.replace('holiday-', '');
     return holidays.find((h) => h.id === holidayId) ?? null;
   }, [selectedEvent, holidays]);
+
+  const selectedImportantDay = useMemo(() => {
+    if (!selectedEvent || selectedEvent.resource.type !== 'important_day') return null;
+    return importantDays.find((d) => d.id === String(selectedEvent.id)) ?? null;
+  }, [selectedEvent, importantDays]);
 
   if (loading && allRequests.length === 0) {
     return (
@@ -464,6 +479,31 @@ const CalendarView: React.FC = () => {
                 )}
                 {selectedHoliday.is_recurring && (
                   <Chip label="Recurring" size="small" color="info" />
+                )}
+              </Box>
+            </DialogContent>
+          </>
+        )}
+
+        {selectedEvent && selectedEvent.resource.type === 'important_day' && selectedImportantDay && (
+          <>
+            <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: selectedImportantDay.color }} />
+              {getLocalizedImportantDayName(selectedImportantDay, language)}
+            </DialogTitle>
+            <DialogContent dividers>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">{langPackLabel("txtDate") || "Date"}</Typography>
+                  <Typography variant="body2">{selectedImportantDay.date_month}/{selectedImportantDay.date_day}</Typography>
+                </Box>
+                {(selectedImportantDay.description || selectedImportantDay.description_tr) && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">{langPackLabel("txtDescription") || "Description"}</Typography>
+                    <Typography variant="body2">
+                      {language === 'tr' && selectedImportantDay.description_tr ? selectedImportantDay.description_tr : selectedImportantDay.description}
+                    </Typography>
+                  </Box>
                 )}
               </Box>
             </DialogContent>

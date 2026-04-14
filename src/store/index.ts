@@ -4,6 +4,7 @@ import authReducer from './slices/authSlice';
 import userReducer from './slices/userSlice';
 import leaveReducer from './slices/leaveSlice';
 import organizationReducer from './slices/organizationSlice';
+import importantDaysReducer from './slices/importantDaysSlice';
 
 export const store = configureStore({
   reducer: {
@@ -11,6 +12,7 @@ export const store = configureStore({
     users: userReducer,
     leave: leaveReducer,
     organization: organizationReducer,
+    importantDays: importantDaysReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

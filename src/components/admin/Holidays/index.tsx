@@ -31,6 +31,7 @@ import {
   Edit,
   Delete,
   Refresh,
+  Flag,
 } from '@mui/icons-material';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import LocalizedDatePicker from '../../common/LocalizedDatePicker';
@@ -150,6 +151,50 @@ const Holidays: React.FC = () => {
     setDeletingHoliday(null);
   };
 
+  const [seeding, setSeeding] = useState(false);
+
+  const TURKISH_HOLIDAYS = [
+    { name: 'Yılbaşı', name_en: 'New Year\'s Day', month: '01', day: '01' },
+    { name: 'Ulusal Egemenlik ve Çocuk Bayramı', name_en: 'National Sovereignty and Children\'s Day', month: '04', day: '23' },
+    { name: 'Emek ve Dayanışma Günü', name_en: 'Labour Day', month: '05', day: '01' },
+    { name: 'Atatürk\'ü Anma, Gençlik ve Spor Bayramı', name_en: 'Commemoration of Atatürk, Youth and Sports Day', month: '05', day: '19' },
+    { name: 'Demokrasi ve Millî Birlik Günü', name_en: 'Democracy and National Unity Day', month: '07', day: '15' },
+    { name: 'Zafer Bayramı', name_en: 'Victory Day', month: '08', day: '30' },
+    { name: 'Cumhuriyet Bayramı', name_en: 'Republic Day', month: '10', day: '28', endDay: '29' },
+  ];
+
+  const handleSeedTurkishHolidays = async () => {
+    setSeeding(true);
+    const year = new Date().getFullYear();
+    let added = 0;
+    try {
+      for (const h of TURKISH_HOLIDAYS) {
+        const date = `${year}-${h.month}-${h.day}`;
+        const endDate = h.endDay ? `${year}-${h.month}-${h.endDay}` : date;
+        // Skip if already exists (same name)
+        const exists = holidays.some((existing) => existing.name === h.name);
+        if (exists) continue;
+        await HolidaysService.create({
+          name: h.name,
+          holiday_date: date,
+          holiday_end_date: endDate,
+          description: h.name_en,
+          is_recurring: true,
+          company_id: companyId,
+        });
+        added++;
+      }
+      await fetchHolidays();
+      if (added === 0) {
+        setError('All Turkish public holidays are already added.');
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', {
@@ -181,6 +226,14 @@ const Holidays: React.FC = () => {
             onClick={fetchHolidays}
             size="small"
           >{langPackLabel("txtRefresh") || "Refresh"}</Button>
+          <Button
+            variant="outlined"
+            color="secondary"
+            startIcon={seeding ? <CircularProgress size={14} /> : <Flag />}
+            onClick={handleSeedTurkishHolidays}
+            disabled={seeding}
+            size="small"
+          >🇹🇷 {langPackLabel("txtSeedTurkishHolidays") || "Add TR Holidays"}</Button>
           <Button
             variant="contained"
             startIcon={<Add />}

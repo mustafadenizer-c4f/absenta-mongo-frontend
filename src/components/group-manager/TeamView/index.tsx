@@ -1,6 +1,7 @@
 // src/components/group-manager/TeamView/index.tsx
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useAutoClearing } from '../../../hooks/useAutoClearing';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   Box,
   Typography,
@@ -27,15 +28,19 @@ import { Calendar, View } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay, eachDayOfInterval, parseISO, addMonths, subMonths } from 'date-fns';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
+import { RootState, AppDispatch } from '../../../store';
+import { fetchImportantDays } from '../../../store/slices/importantDaysSlice';
 import { useAuth } from '../../../hooks/useAuth';
 import { apiClient } from '../../../config/api';
-import { CalendarEvent, LeaveRequest, User } from '../../../types';
+import { CalendarEvent, LeaveRequest, User, ImportantDay } from '../../../types';
+import { resolveImportantDays, getLocalizedImportantDayName } from '../../../utils/resolveImportantDays';
 import ThreeMonthView from '../../common/ThreeMonthView';
 import { useLanguage } from '../../../contexts/LanguageContext';
 import { localizedLeaveTypeName, localizedStatus } from '../../../utils/localize';
 import { calendarLocalizer, getCalendarCulture, getCalendarMessages } from '../../../utils/calendarLocalizer';
 
 const CONFLICT_COLOR = '#FF1744';
+const IMPORTANT_DAY_COLOR_DEFAULT = '#9C27B0';
 
 const statusColorMap: Record<LeaveRequest['status'], 'warning' | 'success' | 'error' | 'default'> = {
   pending: 'warning',
@@ -100,6 +105,8 @@ const GroupManagerTeamView: React.FC = () => {
   const calendarCulture = getCalendarCulture(language);
   const calendarMessages = getCalendarMessages(language);
   const { user } = useAuth();
+  const dispatch = useDispatch<AppDispatch>();
+  const { items: importantDays } = useSelector((state: RootState) => state.importantDays);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useAutoClearing(7000);
@@ -145,6 +152,7 @@ const GroupManagerTeamView: React.FC = () => {
           status: 'approved,pending',
         });
         setGroupRequests(requests ?? []);
+        dispatch(fetchImportantDays(user.company_id));
       } catch (err: any) {
         setError(err.message || langPackLabel("txtFailedToLoad") || 'Failed to load group team data');
       } finally {
@@ -174,20 +182,29 @@ const GroupManagerTeamView: React.FC = () => {
   }, [groupRequests, groupMembers, teamFilteredMembers, selectedTeam, selectedMembers]);
 
   // Build calendar events
-  const events = useMemo(() => mapLeaveToEvents(filteredRequests, language), [filteredRequests, language]);
+  const events = useMemo(() => {
+    const leaveEvents = mapLeaveToEvents(filteredRequests, language);
+    const importantDayEvents = resolveImportantDays(importantDays, new Date().getFullYear(), language);
+    return [...leaveEvents, ...importantDayEvents];
+  }, [filteredRequests, language, importantDays]);
 
   // Detect conflict dates
   const conflictDates = useMemo(() => detectConflictDates(filteredRequests), [filteredRequests]);
 
-  // Style events — pending gets dashed border + reduced opacity
+  // Style events — pending gets dashed border + reduced opacity; important_day gets solid border
   const eventPropGetter = useCallback((event: CalendarEvent) => {
+    const isImportantDay = event.resource.type === 'important_day';
     const isPending = event.resource.status === 'pending';
     return {
       style: {
         backgroundColor: event.resource.color,
         color: '#fff',
         borderRadius: '4px',
-        border: isPending ? '2px dashed rgba(255,255,255,0.6)' : 'none',
+        border: isPending
+          ? '2px dashed rgba(255,255,255,0.6)'
+          : isImportantDay
+          ? `1px solid ${event.resource.color}`
+          : 'none',
         opacity: isPending ? 0.75 : 1,
         fontSize: '0.8rem',
       },
@@ -219,6 +236,12 @@ const GroupManagerTeamView: React.FC = () => {
     if (!selectedEvent || selectedEvent.resource.type !== 'leave') return null;
     return groupRequests.find((r) => r.id === selectedEvent.id) ?? null;
   }, [selectedEvent, groupRequests]);
+
+  // Find the original important day for the detail dialog
+  const selectedImportantDay = useMemo(() => {
+    if (!selectedEvent || selectedEvent.resource.type !== 'important_day') return null;
+    return importantDays.find((d) => d.id === String(selectedEvent.id)) ?? null;
+  }, [selectedEvent, importantDays]);
 
   // Derive unique leave types for legend
   const legendItems = useMemo(() => {
@@ -308,6 +331,10 @@ const GroupManagerTeamView: React.FC = () => {
             <Typography variant="caption">{lt.name}</Typography>
           </Box>
         ))}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Box sx={{ width: 14, height: 14, borderRadius: '3px', backgroundColor: IMPORTANT_DAY_COLOR_DEFAULT, border: `1px solid ${IMPORTANT_DAY_COLOR_DEFAULT}` }} />
+          <Typography variant="caption">{langPackLabel("txtImportantDays") || "Important Days"}</Typography>
+        </Box>
         {conflictDates.size > 0 && (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Box
@@ -396,7 +423,7 @@ const GroupManagerTeamView: React.FC = () => {
         />
       )}
 
-      {/* Leave Request Detail Dialog */}
+      {/* Detail Dialog */}
       <Dialog
         open={!!selectedEvent}
         onClose={() => setSelectedEvent(null)}
@@ -449,6 +476,30 @@ const GroupManagerTeamView: React.FC = () => {
                   <Box>
                     <Typography variant="caption" color="text.secondary">{langPackLabel("txtReason") || "Reason"}</Typography>
                     <Typography variant="body2">{selectedLeaveRequest.reason}</Typography>
+                  </Box>
+                )}
+              </Box>
+            </DialogContent>
+          </>
+        )}
+        {selectedEvent && selectedEvent.resource.type === 'important_day' && selectedImportantDay && (
+          <>
+            <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: selectedImportantDay.color }} />
+              {getLocalizedImportantDayName(selectedImportantDay, language)}
+            </DialogTitle>
+            <DialogContent dividers>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">{langPackLabel("txtDate") || "Date"}</Typography>
+                  <Typography variant="body2">{selectedImportantDay.date_month}/{selectedImportantDay.date_day}</Typography>
+                </Box>
+                {(selectedImportantDay.description || selectedImportantDay.description_tr) && (
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">{langPackLabel("txtDescription") || "Description"}</Typography>
+                    <Typography variant="body2">
+                      {language === 'tr' && selectedImportantDay.description_tr ? selectedImportantDay.description_tr : selectedImportantDay.description}
+                    </Typography>
                   </Box>
                 )}
               </Box>

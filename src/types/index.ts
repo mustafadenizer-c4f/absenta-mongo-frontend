@@ -117,6 +117,20 @@ export interface Holiday {
   company_id: string;
 }
 
+export interface ImportantDay {
+  id: string;
+  name: string;
+  name_tr?: string;
+  date_month: number;   // 1–12
+  date_day: number;     // 1–31
+  description?: string;
+  description_tr?: string;
+  color: string;
+  is_recurring: boolean;
+  year?: number;
+  company_id: string;
+}
+
 export interface AuthState {
   user: User | null;
   session: any | null;
@@ -170,7 +184,7 @@ export interface CalendarEvent {
   end: Date;
   allDay: boolean;
   resource: {
-    type: 'leave' | 'holiday';
+    type: 'leave' | 'holiday' | 'important_day';
     color: string;
     status?: LeaveRequest['status'];
   };

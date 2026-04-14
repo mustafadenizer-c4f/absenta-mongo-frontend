@@ -10,3 +10,4 @@ export { default as Teams } from './Teams';
 export { default as AdminSettings } from './Settings';
 export { default as AdminApprovals } from './Approvals';
 export { default as AdminTeamCalendar } from './TeamCalendar';
+export { default as ImportantDays } from './ImportantDays';

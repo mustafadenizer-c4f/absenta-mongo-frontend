@@ -51,6 +51,7 @@ import {
   CorporateFare,
   GroupWork,
   Translate,
+  Star,
 } from "@mui/icons-material";
 
 const drawerWidth = 220;
@@ -203,6 +204,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       adminItems.push(
         { text: langPackLabel("txtNavLeaveTypes") || "Leave Types", icon: <CalendarToday />, path: "/admin/leave-types" },
         { text: langPackLabel("txtNavHolidays") || "Holidays", icon: <BeachAccess />, path: "/admin/holidays" },
+        { text: langPackLabel("txtNavImportantDays") || "Important Days", icon: <Star />, path: "/admin/important-days" },
         { text: langPackLabel("txtNavCollectiveLeave") || "Collective Leave", icon: <EventBusy />, path: "/admin/collective-leave" },
         // { text: "Reports", icon: <Assessment />, path: "/admin/reports" }, // Hidden for now — later development
         { text: langPackLabel("txtNavSettings") || "Settings", icon: <Settings />, path: "/admin/settings" },
