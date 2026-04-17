@@ -8,6 +8,7 @@ import { resetLeaveState } from "../../../store/slices/leaveSlice";
 import { resetUserState } from "../../../store/slices/userSlice";
 import { RootState, AppDispatch } from "../../../store";
 import { useLanguage } from "../../../contexts/LanguageContext";
+import { BRAND } from "../../../config/brand";
 import {
   Box,
   Drawer,
@@ -223,11 +224,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <Box
           component="img"
           src={`${process.env.PUBLIC_URL}/logos/logo.png`}
-          alt="Absenta"
+          alt={BRAND.logoAlt}
           sx={{ height: 28, borderRadius: '6px' }}
         />
         <Typography variant="subtitle1" sx={{ flexGrow: 1, fontWeight: 600, color: 'text.primary' }}>
-          Absenta {user?.company_name && <span style={{ fontSize: '0.75em', fontWeight: 400, opacity: 0.7 }}>{user.company_name} </span>}
+          {BRAND.name} {user?.company_name && <span style={{ fontSize: '0.75em', fontWeight: 400, opacity: 0.7 }}>{user.company_name} </span>}
         </Typography>
         <IconButton onClick={handleDrawerToggle} size="small">
           {theme.direction === "rtl" ? <ChevronRight /> : <ChevronLeft />}
@@ -301,12 +302,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <Box
             component="img"
             src={`${process.env.PUBLIC_URL}/logos/logo_white.png`}
-            alt="Absenta"
+            alt={BRAND.logoAlt}
             sx={{
               height: 38, mr: 1.5,}}
           />
           <Typography variant="h4" sx={{ flexGrow: 1, fontWeight: 600, letterSpacing: '-0.01em', }}>
-            Absenta {user?.company_name && <span style={{ fontSize: '0.65em', fontWeight: 400, opacity: 0.7 }}>{user.company_name} </span>}
+            {BRAND.name} {user?.company_name && <span style={{ fontSize: '0.65em', fontWeight: 400, opacity: 0.7 }}>{user.company_name} </span>}
           </Typography>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>

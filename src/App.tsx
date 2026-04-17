@@ -11,6 +11,7 @@ import { fetchHolidays } from './store/slices/leaveSlice';
 import baseTheme from './theme';
 import { User } from './types';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import { BRAND } from './config/brand';
 
 // Auth components
 import Login from './components/auth/Login';
@@ -73,6 +74,11 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     dispatch(checkSession());
   }, [dispatch]);
+
+  // Set document title from brand config
+  useEffect(() => {
+    document.title = BRAND.name;
+  }, []);
 
   // Fetch holidays once on app load when user is authenticated (Req 17.3)
   useEffect(() => {

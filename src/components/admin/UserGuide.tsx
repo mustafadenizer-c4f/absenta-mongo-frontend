@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { BRAND } from '../../config/brand';
 
 const Section: React.FC<{ title: string; defaultExpanded?: boolean; children: React.ReactNode }> = ({
   title, defaultExpanded = false, children,
@@ -41,10 +42,10 @@ const UserGuide: React.FC = () => {
   return (
     <Box>
       <Typography variant="h5" sx={{ mb: 1, color: 'primary.main', fontWeight: 600 }}>
-        {langPackLabel("txtAppManual") || "Absenta — Application Manual"}
+        {langPackLabel("txtAppManual") || `${BRAND.name} — Application Manual`}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        {t ? 'Absenta izin yönetim sistemi için tüm roller ve özellikler rehberi.' : 'Complete guide for all roles and features in the Absenta leave management system.'}
+        {t ? `${BRAND.name} izin yönetim sistemi için tüm roller ve özellikler rehberi.` : `Complete guide for all roles and features in the ${BRAND.name} employee leave management system.`}
       </Typography>
 
       {/* ── Quick Start ── */}
@@ -113,7 +114,7 @@ const UserGuide: React.FC = () => {
       {/* ── Overview ── */}
       <Section title={t ? '1. Genel Bakış' : '1. Overview'} defaultExpanded>
         <Typography variant="body2" sx={{ mb: 2 }}>
-          {t ? 'Absenta, birden fazla organizasyon hiyerarşisi ve rolü destekleyen bir izin yönetim uygulamasıdır. İzin talepleri, onaylar, bakiye takibi, toplu izin ve takım takvimleri yönetir.' : 'Absenta is a leave management application that supports multiple organizational hierarchies and roles. It handles leave requests, approvals, balance tracking, collective leave, and team calendars.'}
+          {t ? `${BRAND.name}, birden fazla organizasyon hiyerarşisi ve rolü destekleyen bir izin yönetim uygulamasıdır. İzin talepleri, onaylar, bakiye takibi, toplu izin ve takım takvimleri yönetir.` : `${BRAND.name} is a employee leave management application that supports multiple organizational hierarchies and roles. It handles leave requests, approvals, balance tracking, collective leave, and team calendars.`}
         </Typography>
         <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>{t ? 'Desteklenen Roller' : 'Supported Roles'}</Typography>
         <List dense>

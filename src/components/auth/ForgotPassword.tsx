@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { BRAND } from '../../config/brand';
 import { AuthService } from '../../services/auth';
 import {
   Container,
@@ -72,7 +73,7 @@ const ForgotPassword: React.FC = () => {
               <Box
                 component="img"
                 src={`${process.env.PUBLIC_URL}/logos/logo.png`}
-                alt="Absenta"
+                alt={BRAND.logoAlt}
                 sx={{ height: 64, mx: 'auto', mb: 2 }}
               />
               <Typography
@@ -165,7 +166,7 @@ const ForgotPassword: React.FC = () => {
 
         <Box sx={{ mt: 3, textAlign: 'center' }}>
           <Typography variant="caption" color="text.secondary">
-            © {new Date().getFullYear()} Cloud4Feed Absenta
+            {BRAND.copyright}
           </Typography>
         </Box>
       </Box>

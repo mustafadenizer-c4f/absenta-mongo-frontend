@@ -12,6 +12,7 @@ import {
   AccordionDetails,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { BRAND } from '../../config/brand';
 
 const Section: React.FC<{ title: string; defaultExpanded?: boolean; children: React.ReactNode }> = ({
   title, defaultExpanded = false, children,
@@ -40,7 +41,7 @@ const SystemGuide: React.FC = () => {
         System Manual
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Server administration guide for the Absenta platform supervisor.
+        Server administration guide for the {BRAND.name} platform supervisor.
       </Typography>
 
       {/* ── First Run ── */}
@@ -104,9 +105,9 @@ const SystemGuide: React.FC = () => {
       {/* ── Database Architecture ── */}
       <Section title="4. Database Architecture">
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Absenta uses a multi-tenant database architecture for data isolation between companies.
+          {BRAND.name} uses a multi-tenant database architecture for data isolation between companies.
         </Typography>
-        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Shared Database (absenta)</Typography>
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>Shared Database</Typography>
         <List dense>
           <ListItem><ListItemText primary="Companies — company records and SMTP configuration" /></ListItem>
           <ListItem><ListItemText primary="Users — all user accounts across all companies" /></ListItem>
@@ -114,7 +115,7 @@ const SystemGuide: React.FC = () => {
           <ListItem><ListItemText primary="RefreshTokens, PasswordResetTokens — authentication tokens" /></ListItem>
         </List>
 
-        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1, mt: 2 }}>Per-Company Database (absenta_tenant_&#123;companyId&#125;)</Typography>
+        <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1, mt: 2 }}>Per-Company Database (tenant_&#123;companyId&#125;)</Typography>
         <List dense>
           <ListItem><ListItemText primary="Groups, Departments, Teams — organizational structure" /></ListItem>
           <ListItem><ListItemText primary="LeaveTypes — company-specific leave type definitions" /></ListItem>
@@ -208,7 +209,7 @@ const SystemGuide: React.FC = () => {
           <ListItem>
             <ListItemText
               primary={<code>MONGODB_URI</code>}
-              secondary="MongoDB connection string (default: mongodb://localhost:27017/absenta)"
+              secondary="MongoDB connection string (default: mongodb://localhost:27017/<<BRAND>>)"
             />
           </ListItem>
           <ListItem>

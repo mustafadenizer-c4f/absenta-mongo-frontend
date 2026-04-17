@@ -5,6 +5,7 @@ import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { login, clearError } from '../../store/slices/authSlice';
 import { RootState, AppDispatch } from '../../store';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { BRAND } from '../../config/brand';
 import {
   Container,
   Box,
@@ -134,7 +135,7 @@ const Login: React.FC = () => {
               <Box
                 component="img"
                 src={`${process.env.PUBLIC_URL}/logos/logo.png`}
-                alt="Absenta"
+                alt={BRAND.logoAlt}
                 sx={{ height: 64, mx: 'auto', mb: 2 }}
               />
               <Typography
@@ -145,7 +146,7 @@ const Login: React.FC = () => {
                 {langPackLabel("txtWelcomeBack") || "Welcome back"}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                {langPackLabel("txtSignInSubtitle") || "Sign in to your Absenta account"}
+                {langPackLabel("txtSignInSubtitle") || `Sign in to your ${BRAND.name} account`}
               </Typography>
             </Box>
 
@@ -237,7 +238,7 @@ const Login: React.FC = () => {
 
         <Box sx={{ mt: 3, textAlign: 'center' }}>
           <Typography variant="caption" color="text.secondary">
-            © {new Date().getFullYear()} Cloud4Feed Absenta
+            {BRAND.copyright}
           </Typography>
         </Box>
       </Box>

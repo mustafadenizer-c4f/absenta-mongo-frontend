@@ -32,15 +32,15 @@ Opens at http://localhost:3000.
 | Manager | + Approvals, Team View, Team Balances |
 | Group Manager | + Group Approvals, Group Team View, Group Balances |
 | Dept Manager | + Dept Approvals, Dept Calendar, Dept Balances |
-| Admin | + User Management, Leave Types, Holidays, Collective Leave, Settings, Team Calendar, App Manual |
-| Supervisor | Companies, Label Management, System Manual |
+| Admin | + User Management, Leave Types, Holidays, Important Days, Collective Leave, Settings, Team Calendar, App Manual |
+| Supervisor | Companies, Default Leave Types, Label Management, System Manual |
 
 ## Project Structure
 
 ```
 src/
 ├── components/
-│   ├── admin/           # Admin pages (dashboard, users, settings, etc.)
+│   ├── admin/           # Admin pages (dashboard, users, holidays, important days, settings, etc.)
 │   ├── auth/            # Login, forgot password, password reset
 │   ├── common/          # Layout, ProtectedRoute, ErrorBoundary
 │   ├── general-manager/ # Department manager views
@@ -49,11 +49,12 @@ src/
 │   ├── profile/         # User profile page
 │   ├── staff/           # Staff pages (dashboard, request, history, calendar)
 │   └── supervisor/      # Supervisor pages (companies, labels, system guide)
-├── contexts/            # LanguageContext (i18n)
+├── contexts/            # LanguageContext (i18n / bilingual EN+TR)
 ├── config/              # API client configuration
-├── services/            # API service classes
+├── services/            # API service classes (holidays, importantDays, etc.)
 ├── store/               # Redux store and slices
 ├── types/               # TypeScript interfaces
+├── utils/               # Helpers (resolveImportantDays, localize, calendarLocalizer)
 ├── App.tsx              # Routes and app shell
 └── theme.ts             # MUI theme
 ```
@@ -65,3 +66,12 @@ src/
 | `npm start` | Dev server on port 3000 |
 | `npm run build` | Production build to `build/` |
 | `npm test` | Run tests |
+
+## Deployment (S3 + CloudFront)
+
+1. Run `npm run build`
+2. Upload the `build/` folder contents to your S3 bucket
+3. In CloudFront → Error Pages, add custom error responses:
+   - 403 → `/index.html` → 200
+   - 404 → `/index.html` → 200
+4. Invalidate the CloudFront cache: `/*`
