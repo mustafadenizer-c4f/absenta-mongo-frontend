@@ -146,7 +146,7 @@ const Login: React.FC = () => {
                 {langPackLabel("txtWelcomeBack") || "Welcome back"}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                {langPackLabel("txtSignInSubtitle") || `Sign in to your ${BRAND.name} account`}
+                {langPackLabel("txtSignInSubtitle") || `Sign in to your account`}
               </Typography>
             </Box>
 

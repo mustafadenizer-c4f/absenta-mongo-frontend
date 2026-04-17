@@ -228,18 +228,22 @@ const LaunchPage: React.FC = () => {
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', overflow: 'hidden' }}>
       {/* Nav */}
       <Box sx={{
-        background: 'transparent', py: 1.5, px: 3,
+        background: 'transparent', py: 1.5, px: { xs: 1.5, md: 3 },
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box component="img" src="/logos/logo_white.png" alt={BRAND.name} sx={{ height: 32 }} />
-          <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>{BRAND.name}</Typography>
+          <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, display: { xs: 'none', sm: 'block' } }}>{BRAND.name}</Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button component={RouterLink} to="/manual" size="small" sx={{ color: '#fff', textTransform: 'none' }} startIcon={<MenuBook />}>Manual</Button>
-          <Button component={RouterLink} to="/dev" size="small" sx={{ color: '#fff', textTransform: 'none' }} startIcon={<Code />}>Dev</Button>
-          <Button component={RouterLink} to="/login" variant="outlined" size="small" sx={{ color: '#fff', borderColor: alpha('#fff', 0.4), '&:hover': { borderColor: '#fff', bgcolor: alpha('#fff', 0.1) } }} startIcon={<Login />}>Sign In</Button>
+        <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
+          <Button component={RouterLink} to="/manual" size="small" sx={{ color: '#fff', textTransform: 'none', minWidth: 'auto', px: { xs: 1, md: 1.5 } }} startIcon={<MenuBook />}>
+            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Manual</Box>
+          </Button>
+          <Button component={RouterLink} to="/dev" size="small" sx={{ color: '#fff', textTransform: 'none', minWidth: 'auto', px: { xs: 1, md: 1.5 } }} startIcon={<Code />}>
+            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Dev</Box>
+          </Button>
+          <Button component={RouterLink} to="/login" variant="outlined" size="small" sx={{ color: '#fff', borderColor: alpha('#fff', 0.4), whiteSpace: 'nowrap', '&:hover': { borderColor: '#fff', bgcolor: alpha('#fff', 0.1) } }} startIcon={<Login />}>Sign In</Button>
         </Box>
       </Box>
 

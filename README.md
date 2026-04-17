@@ -1,6 +1,6 @@
-# Absenta — Frontend
+# Frontend
 
-React frontend for the Absenta leave management system.
+React frontend for the Leave management system.
 
 ## Tech Stack
 

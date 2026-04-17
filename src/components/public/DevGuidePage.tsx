@@ -155,7 +155,7 @@ cd server && npm run seed:labels
           <Section title="Architecture">
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Multi-Tenant Database</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Each company gets its own MongoDB database named <code>t_&#123;companyId&#125;</code>. A shared database (<code>absenta</code>) holds cross-tenant data. The <code>tenantContext</code> middleware resolves the correct database on every request.
+              Each company gets its own MongoDB database named <code>t_&#123;companyId&#125;</code>. A shared database (<code>system</code>) holds cross-tenant data. The <code>tenantContext</code> middleware resolves the correct database on every request.
             </Typography>
 
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Custom MongoDB Connections</Typography>
