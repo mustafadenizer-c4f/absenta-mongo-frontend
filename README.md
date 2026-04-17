@@ -32,8 +32,8 @@ Opens at http://localhost:3000.
 | Manager | + Approvals, Team View, Team Balances |
 | Group Manager | + Group Approvals, Group Team View, Group Balances |
 | Dept Manager | + Dept Approvals, Dept Calendar, Dept Balances |
-| Admin | + User Management, Leave Types, Holidays, Important Days, Collective Leave, Settings, Team Calendar, App Manual |
-| Supervisor | Companies, Default Leave Types, Label Management, System Manual |
+| Admin | + User Management, Leave Types, Holidays, Important Days, Collective Leave, Settings (Organization, Workdays, Email, Database), Team Calendar, App Manual |
+| Supervisor | Companies (with Reset to System Database), Default Leave Types, Label Management, System Manual |
 
 ## Project Structure
 
@@ -51,9 +51,9 @@ src/
 │   └── supervisor/      # Supervisor pages (companies, labels, system guide)
 ├── contexts/            # LanguageContext (i18n / bilingual EN+TR)
 ├── config/              # API client configuration
-├── services/            # API service classes (holidays, importantDays, etc.)
+├── services/            # API service classes (holidays, importantDays, organization, supervisor, etc.)
 ├── store/               # Redux store and slices
-├── types/               # TypeScript interfaces
+├── types/               # TypeScript interfaces (Company, User, CustomMongoConfig, etc.)
 ├── utils/               # Helpers (resolveImportantDays, localize, calendarLocalizer)
 ├── App.tsx              # Routes and app shell
 └── theme.ts             # MUI theme

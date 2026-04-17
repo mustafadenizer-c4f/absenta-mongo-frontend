@@ -5,7 +5,7 @@
  */
 export const BRAND = {
   /** App name shown in the header, sidebar, page titles, etc. */
-  name: 'Absenta',
+  name: 'Awayly',
 
   /** Company / copyright holder name */
   company: 'Cloud4Feed',

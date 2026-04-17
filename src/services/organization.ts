@@ -1,6 +1,6 @@
 // src/services/organization.ts
 import { apiClient } from '../config/api';
-import { Company, Group, Department, Team, HierarchyProfile } from '../types';
+import { Company, Group, Department, Team, HierarchyProfile, CustomMongoConfig, ConnectionTestResult } from '../types';
 
 export interface SmtpConfig {
   smtp_host: string;
@@ -168,5 +168,21 @@ export const OrganizationService = {
   async testSmtpConfig(): Promise<{ success: boolean; error?: string }> {
     const data = await apiClient.post<{ success: boolean; error?: string }>('/companies/smtp/test');
     return data;
+  },
+
+  // ── Custom MongoDB Configuration ───────────────────────────
+
+  async testMongoConnection(uri: string): Promise<ConnectionTestResult> {
+    const data = await apiClient.post<ConnectionTestResult>('/companies/test-mongo-connection', { uri });
+    return data;
+  },
+
+  async getCustomMongoConfig(companyId: string): Promise<CustomMongoConfig> {
+    const data = await apiClient.get<CustomMongoConfig>(`/companies/${companyId}/custom-mongo`);
+    return data;
+  },
+
+  async saveCustomMongoConfig(companyId: string, config: CustomMongoConfig): Promise<void> {
+    await apiClient.put(`/companies/${companyId}/custom-mongo`, config);
   },
 };

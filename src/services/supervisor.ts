@@ -1,6 +1,6 @@
 // src/services/supervisor.ts
 import { apiClient } from '../config/api';
-import { Company, CompanyWithAdmin, HierarchyProfile } from '../types';
+import { Company, CompanyWithAdmin, HierarchyProfile, ConnectionTestResult } from '../types';
 
 interface CreateCompanyRequest {
   name: string;
@@ -38,6 +38,15 @@ export const SupervisorService = {
 
   async getCompaniesWithAdmins(): Promise<CompanyWithAdmin[]> {
     const data = await apiClient.get<CompanyWithAdmin[]>('/supervisor/companies');
+    return data;
+  },
+
+  async resetToSystemDatabase(companyId: string): Promise<void> {
+    await apiClient.post(`/supervisor/companies/${companyId}/reset-database`);
+  },
+
+  async testMongoConnection(uri: string): Promise<ConnectionTestResult> {
+    const data = await apiClient.post<ConnectionTestResult>('/supervisor/test-mongo-connection', { uri });
     return data;
   },
 };

@@ -36,6 +36,7 @@ import {
   Email,
   Description,
   AccountTree,
+  StorageRounded,
 } from '@mui/icons-material';
 import { SupervisorService } from '../../services/supervisor';
 import { CompanyWithAdmin, HierarchyProfile } from '../../types';
@@ -74,6 +75,11 @@ const SupervisorCompanies: React.FC = () => {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetTarget, setResetTarget] = useState<{ id: string; email: string } | null>(null);
   const [resetting, setResetting] = useState(false);
+
+  // Reset to system database
+  const [resetDbDialogOpen, setResetDbDialogOpen] = useState(false);
+  const [resetDbTarget, setResetDbTarget] = useState<CompanyWithAdmin | null>(null);
+  const [resettingDb, setResettingDb] = useState(false);
 
   useEffect(() => { fetchCompanies(); }, []);
 
@@ -153,6 +159,19 @@ const SupervisorCompanies: React.FC = () => {
       setResetDialogOpen(false);
     } catch (err: any) { setError(err.message); }
     finally { setResetting(false); }
+  };
+
+  const handleResetToSystemDatabase = async () => {
+    if (!resetDbTarget) return;
+    setResettingDb(true);
+    try {
+      await SupervisorService.resetToSystemDatabase(resetDbTarget.id);
+      setSuccessMessage(langPackLabel("txtResetDbSuccess") || `Database reset to system for ${resetDbTarget.name}`);
+      setResetDbDialogOpen(false);
+      setResetDbTarget(null);
+      fetchCompanies();
+    } catch (err: any) { setError(err.message); }
+    finally { setResettingDb(false); }
   };
 
   const stats = {
@@ -263,7 +282,14 @@ const SupervisorCompanies: React.FC = () => {
                 )}
 
                 {/* Actions */}
-                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', alignItems: 'center' }}>
+                  {company.custom_mongo_enabled && (
+                    <Tooltip title={langPackLabel("txtResetToSystemDatabase") || "Reset to System Database"}>
+                      <IconButton size="small" color="error" onClick={() => { setResetDbTarget(company); setResetDbDialogOpen(true); }}>
+                        <StorageRounded fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                   <Tooltip title={langPackLabel("txtEdit") || "Edit"}>
                     <IconButton size="small" color="primary" onClick={() => openEdit(company)}><Edit fontSize="small" /></IconButton>
                   </Tooltip>
@@ -317,6 +343,22 @@ const SupervisorCompanies: React.FC = () => {
         <DialogActions>
           <Button onClick={() => setResetDialogOpen(false)}>{langPackLabel("txtCancel") || "Cancel"}</Button>
           <Button variant="contained" color="warning" onClick={handleResetPassword} disabled={resetting}>{resetting ? <CircularProgress size={20} /> : (langPackLabel("txtResetPassword") || "Reset")}</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Reset to System Database Dialog */}
+      <Dialog open={resetDbDialogOpen} onClose={() => setResetDbDialogOpen(false)}>
+        <DialogTitle>{langPackLabel("txtResetToSystemDatabase") || "Reset to System Database"}</DialogTitle>
+        <DialogContent>
+          <Typography>
+            {langPackLabel("txtResetDbConfirm") || "This will disconnect the company from their custom database. The admin will need to log in using the system database and reconfigure. Company data on the custom instance will not be deleted."}
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResetDbDialogOpen(false)}>{langPackLabel("txtCancel") || "Cancel"}</Button>
+          <Button variant="contained" color="error" onClick={handleResetToSystemDatabase} disabled={resettingDb}>
+            {resettingDb ? <CircularProgress size={20} /> : (langPackLabel("txtReset") || "Reset")}
+          </Button>
         </DialogActions>
       </Dialog>
 

@@ -14,6 +14,8 @@ export interface Company {
   created_at: string;
   workday_config?: number[]; // 0=Sun, 1=Mon, ..., 6=Sat
   legal_workdays?: number[]; // days deducted from leave but not actual work days
+  email_domain?: string;
+  custom_mongo_enabled?: boolean;
 }
 
 export const DEFAULT_WORKDAYS: number[] = [1, 2, 3, 4, 5];
@@ -26,6 +28,7 @@ export interface CompanyWithAdmin extends Company {
     full_name: string;
     last_login?: string;
   };
+  custom_mongo_enabled?: boolean;
 }
 
 export interface Group {
@@ -218,4 +221,16 @@ export interface CollectiveLeave {
   scope_id: string;
   created_by: string;
   created_at: string;
+}
+
+export interface CustomMongoConfig {
+  custom_mongo_uri: string;
+  email_domain: string;
+  custom_mongo_enabled: boolean;
+}
+
+export interface ConnectionTestResult {
+  success: boolean;
+  message: string;
+  latencyMs?: number;
 }

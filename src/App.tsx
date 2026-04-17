@@ -48,6 +48,11 @@ import { SupervisorDashboard, SupervisorCompanies, SupervisorLabelManagement, Su
 // Profile component
 import ProfilePage from './components/profile/ProfilePage';
 
+// Public pages (no auth required)
+import LaunchPage from './components/public/LaunchPage';
+import ManualPage from './components/public/ManualPage';
+import DevGuidePage from './components/public/DevGuidePage';
+
 /** Returns the default dashboard route for a given user role. */
 function resolveDefaultRoute(user: User): string {
   switch (user.role) {
@@ -104,6 +109,9 @@ const AppContent: React.FC = () => {
     <Router basename={process.env.PUBLIC_URL}>
       <Routes>
         {/* Public routes */}
+        <Route path="/launch" element={<LaunchPage />} />
+        <Route path="/manual" element={<ManualPage />} />
+        <Route path="/dev" element={<DevGuidePage />} />
         <Route path="/login" element={
           user ? <Navigate to={resolveDefaultRoute(user)} replace /> : <Login />
         } />
